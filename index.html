@@ -1,0 +1,1698 @@
+<!doctype html>
+<!-- Created by Fang and Claw 2026 · v2.0 -->
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel de Frequência e Rendimento</title>
+<script>try { const t = localStorage.getItem("tema"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;500;600&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Estilo herdado do Monkius (Relatório RT): faixa azul, faixa de filtros, KPIs, leitura de gestão, painéis e matriz. */
+:root {
+  --brand: #1f438c;
+  --brand-2: #2a59c3;
+  --gold: #f7d661;
+  --on-brand: #ffffff;
+  --bg: #edf1f8;
+  --surface: #ffffff;
+  --fg: #1a2233;
+  --muted: #5d6880;
+  --line: #dde4ef;
+  --track: #e6ecf5;
+  --t1: #3d8cc7;
+  --t2: #e0a100;
+  --bad: #e02232;
+  --bad-text: #c8101f;
+  --bad-tint: #fdeced;
+  --warn: #f0b400;
+  --warn-tint: #fdf6d8;
+  --ok: #37a63e;
+  --ok-text: #217a29;
+  --flag-blue: #3d8cc7; --flag-green: #4aa734; --flag-yellow: #f7bb01; --flag-red: #dd1b12;
+  --display: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1320; --surface: #151d2d; --fg: #e5eaf3; --muted: #9aa5ba; --line: #26324a; --track: #222d44;
+    --bad: #ff4757; --bad-text: #ff7380; --bad-tint: #3b1820; --warn-tint: #2f2a14; --ok: #45b84c; --ok-text: #6fd277;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1320; --surface: #151d2d; --fg: #e5eaf3; --muted: #9aa5ba; --line: #26324a; --track: #222d44;
+  --bad: #ff4757; --bad-text: #ff7380; --bad-tint: #3b1820; --warn-tint: #2f2a14; --ok: #45b84c; --ok-text: #6fd277;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.45; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button, input, select { font: inherit; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.wrap { max-width: 1280px; margin-inline: auto; }
+.band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+.top { background: var(--brand); color: var(--on-brand); padding-block: 0.9rem; }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.25rem 1rem; }
+.top h1 { font-size: 1.6rem; font-weight: 600; }
+.top p { font-family: var(--display); font-size: 1rem; opacity: 0.85; }
+
+.filters { background: var(--brand-2); color: var(--on-brand); padding-block: 0.75rem; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--brand-2); }
+.filters .wrap { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.7fr) minmax(0, 0.9fr) auto auto; gap: 0.6rem 0.9rem; align-items: end; }
+.field { display: grid; gap: 0.2rem; min-width: 0; }
+.field label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.filters select { width: 100%; background: var(--brand); color: var(--on-brand); border: 1px solid rgba(255,255,255,0.55); border-radius: 3px; padding: 0.4rem 0.55rem; color-scheme: dark; }
+.btn-pdf { background: var(--gold); color: #1f2a44; border: 0; border-radius: 3px; padding: 0.45rem 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-pdf:disabled { opacity: 0.6; cursor: not-allowed; }
+.sem-download .btn-pdf { display: none; }
+
+main { padding-block: 1.1rem 2.5rem; display: grid; gap: 1.1rem; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.8rem; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.7rem 0.9rem; min-width: 0; }
+.kpi span { display: block; font-family: var(--display); font-size: 0.95rem; color: var(--muted); line-height: 1.2; }
+.kpi strong { display: block; font-family: var(--display); font-weight: 500; font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kpi small { color: var(--muted); font-size: 0.8rem; }
+.kpi.bad strong { color: var(--bad-text); }
+.kpi.bad { border-top: 3px solid var(--bad); }
+.kpi.warn { border-top: 3px solid var(--warn); }
+
+.insights { background: var(--warn-tint); border: 1px solid var(--gold); border-radius: 6px; padding: 0.9rem 1.1rem; display: grid; gap: 0.5rem; }
+.insights h2 { font-size: 1.15rem; font-weight: 600; }
+.insights ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; max-width: 110ch; }
+.insights b { font-weight: 600; }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 0.9rem 1.1rem 1rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.7rem; align-content: start; min-width: 0; }
+.panel.wide { grid-column: 1 / -1; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.3rem 1rem; }
+.panel h2 { font-size: 1.2rem; font-weight: 600; }
+.panel .sub { font-size: 0.82rem; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.sw { width: 0.75rem; height: 0.75rem; border-radius: 50%; display: inline-block; }
+.link { background: none; border: 0; color: var(--brand-2); font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline; }
+:root[data-theme="dark"] .link { color: var(--t1); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .link { color: var(--t1); } }
+
+/* barras horizontais */
+.hbars { display: grid; gap: 0.35rem; }
+.hbar { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 6.2rem; gap: 0.6rem; align-items: center; font-size: 0.85rem; }
+.hbar .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar .track { height: 0.85rem; background: var(--track); border-radius: 0 4px 4px 0; position: relative; }
+.hbar .fill { position: absolute; inset: 0 auto 0 0; background: var(--bad); border-radius: 0 4px 4px 0; min-width: 2px; }
+.hbar .val { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hbar .val b { font-weight: 600; }
+.hbar .val small { color: var(--muted); }
+
+/* colunas da distribuição */
+.cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.6rem; align-items: end; height: 13rem; padding-top: 1.4rem; }
+.col { display: grid; grid-template-rows: auto 1fr auto; height: 100%; text-align: center; font-size: 0.82rem; min-width: 0; }
+.col .bar-area { display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
+.col .bar { width: min(70%, 3.5rem); border-radius: 4px 4px 0 0; background: var(--muted); min-height: 2px; }
+.col.r1 .bar, .col.r2 .bar { background: var(--warn); }
+.col.r3 .bar, .col.r4 .bar, .col.r5 .bar { background: var(--bad); }
+.col .n { font-variant-numeric: tabular-nums; font-weight: 600; }
+.col .x { color: var(--muted); padding-top: 0.25rem; }
+
+/* halteres 1º x 2º TRI */
+.dumb { display: grid; gap: 0.45rem; }
+.drow { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 6.6rem; gap: 0.6rem; align-items: center; font-size: 0.85rem; }
+.drow .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dtrack { position: relative; height: 1rem; }
+.dtrack::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dashed var(--line); }
+.dtrack .six { position: absolute; top: -0.15rem; bottom: -0.15rem; width: 1px; background: var(--muted); opacity: 0.6; }
+.dtrack .seg { position: absolute; top: calc(50% - 1px); height: 2px; background: var(--muted); }
+.dtrack .dot { position: absolute; top: 50%; width: 0.7rem; height: 0.7rem; margin: -0.35rem 0 0 -0.35rem; border-radius: 50%; border: 2px solid var(--surface); }
+.dot.t1, .sw.t1 { background: var(--t1); } .dot.t2, .sw.t2 { background: var(--t2); }
+.drow .val { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.down { color: var(--bad-text); } .up { color: var(--ok-text); }
+.axis { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 6.6rem; gap: 0.6rem; font-size: 0.72rem; color: var(--muted); }
+.axis div { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+
+/* ranking */
+.rank { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.rank th { text-align: left; font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--line); }
+.rank td { padding: 0.32rem 0.4rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.rank td.num, .rank th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank .nome { max-width: 26rem; }
+.rank .mini { display: inline-block; width: 4rem; height: 0.55rem; background: var(--track); border-radius: 0 3px 3px 0; vertical-align: middle; margin-right: 0.4rem; position: relative; }
+.rank .mini i { position: absolute; inset: 0 auto 0 0; background: var(--bad); border-radius: 0 3px 3px 0; }
+.rank tr[data-escola], .rank tr[data-turma] { cursor: pointer; }
+.rank tr[data-escola]:hover, .rank tr[data-turma]:hover { background: var(--track); }
+.scroll { overflow-x: auto; min-width: 0; }
+
+/* tabela de estudantes */
+.toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: end; }
+.toolbar .field label { color: var(--muted); }
+.toolbar input[type="search"], .toolbar select { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 3px; padding: 0.35rem 0.5rem; min-width: 0; }
+.toolbar input[type="search"] { width: 16rem; max-width: 100%; }
+.toolbar .check { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; padding-bottom: 0.35rem; cursor: pointer; }
+.matrix-box { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: 4px; }
+.matrix { border-collapse: separate; border-spacing: 0; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.matrix th, .matrix td { padding: 0.28rem 0.45rem; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--surface); }
+.matrix thead th { position: sticky; z-index: 2; font-weight: 600; text-align: center; }
+.matrix thead tr:first-child th { top: 0; height: 2.1rem; }
+.matrix thead tr:nth-child(2) th { top: 2.1rem; font-size: 0.7rem; color: var(--muted); }
+.matrix th.disc { border-left: 2px solid var(--line); max-width: 12rem; white-space: normal; line-height: 1.15; font-size: 0.75rem; }
+.matrix td.n1 { border-left: 2px solid var(--line); }
+.matrix td.n1, .matrix td.n2, .matrix td.nec { text-align: center; }
+.matrix td.nec { font-weight: 600; }
+.matrix td.nec.rec { color: var(--bad-text); background: var(--bad-tint); }
+.matrix td.nec.aten { color: var(--warn); background: var(--warn-tint); }
+.matrix .aluno { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 15rem; max-width: 19rem; white-space: normal; border-right: 1px solid var(--line); }
+.matrix thead .aluno { z-index: 3; }
+.matrix .qtd { text-align: center; font-weight: 600; }
+.matrix td.qtd.tem { color: var(--bad-text); }
+.matrix .aluno small { display: block; color: var(--muted); font-size: 0.72rem; }
+.matrix .vazio { color: var(--muted); }
+.pager { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--muted); }
+.pager button { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 3px; padding: 0.3rem 0.7rem; cursor: pointer; }
+.pager button:disabled { opacity: 0.45; cursor: default; }
+.empty { padding: 1.5rem; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 6px; }
+.note { font-size: 0.8rem; color: var(--muted); }
+
+/* tela de login */
+.login { min-height: 100vh; display: grid; place-items: center; padding-block: 2rem; background: var(--brand); }
+.login-card { width: min(100%, 30rem); background: var(--surface); border-radius: 6px; overflow: hidden; box-shadow: 0 10px 30px rgba(10, 25, 60, 0.35); }
+.login-card header { background: var(--brand-2); color: var(--on-brand); padding: 1.1rem 1.4rem; }
+.login-card h1 { font-size: 1.8rem; font-weight: 600; }
+.login-card header p { font-family: var(--display); opacity: 0.9; }
+.atualizado { background: var(--warn-tint); border: 1px solid var(--gold); border-radius: 3px; padding: 0.45rem 0.7rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.login-card form { padding: 1.2rem 1.4rem 1.4rem; display: grid; gap: 0.9rem; }
+.login-card .field label { color: var(--muted); }
+.login-card select, .login-card input { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 3px; padding: 0.5rem 0.6rem; }
+.login-card .busca { position: relative; }
+.login-card .busca svg { position: absolute; left: 0.55rem; top: 50%; width: 1rem; height: 1rem; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.login-card .busca input { padding-left: 2rem; }
+.login-card .acesso { font-size: 0.82rem; color: var(--muted); }
+.login-card button { background: var(--gold); color: #1f2a44; border: 0; border-radius: 3px; padding: 0.6rem 1rem; font-weight: 600; cursor: pointer; }
+.login-card button:disabled { opacity: 0.7; cursor: progress; }
+.erro { color: var(--bad-text); background: var(--bad-tint); border-radius: 3px; padding: 0.5rem 0.7rem; font-weight: 600; }
+.sessao { display: flex; align-items: center; gap: 0.8rem; font-family: var(--display); font-size: 1rem; }
+.sessao button { background: transparent; color: var(--on-brand); border: 1px solid rgba(255,255,255,0.7); border-radius: 3px; padding: 0.2rem 0.7rem; cursor: pointer; }
+
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--fg); color: var(--bg); font-size: 0.8rem; padding: 0.35rem 0.55rem; border-radius: 4px; max-width: 18rem; line-height: 1.3; }
+
+.stripe { display: grid; grid-template-columns: 2fr 3fr 2fr 3fr; height: 6px; }
+.stripe i:nth-child(1) { background: var(--flag-blue); } .stripe i:nth-child(2) { background: var(--flag-green); }
+.stripe i:nth-child(3) { background: var(--flag-yellow); } .stripe i:nth-child(4) { background: var(--flag-red); }
+
+@media (max-width: 1000px) {
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .filters .wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .btn-pdf { justify-self: start; }
+}
+@media (max-width: 760px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters { position: static; }
+  .hbar, .drow, .axis { grid-template-columns: minmax(0, 7rem) minmax(0, 1fr) 5.6rem; }
+  .kpi strong { font-size: 1.6rem; }
+}
+
+/* ---------- Acréscimos do painel de frequência (mesmos tokens do Monkius) ---------- */
+.filters .wrap { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr) minmax(0, 1.6fr) minmax(0, 1fr) auto auto; }
+.tema { display: inline-flex; align-items: center; gap: 0.4rem; background: transparent; color: var(--on-brand); border: 1px solid rgba(255,255,255,0.7); border-radius: 3px; padding: 0.2rem 0.7rem; cursor: pointer; font-family: var(--display); font-size: 0.95rem; }
+.tema svg { width: 1rem; height: 1rem; }
+.login-card header { position: relative; }
+.login-card header .tema { position: absolute; top: 0.9rem; right: 1rem; }
+.login-card header .tema span { display: none; }
+.kpis .kpi.ok { border-top: 3px solid var(--ok); }
+
+/* faixas de cores das colunas (parcela do limite do bloco) */
+.col.q0 .bar, .col.q1 .bar, .col.q2 .bar { background: var(--muted); }
+.col.q3 .bar { background: var(--warn); }
+.col.q4 .bar, .col.q5 .bar { background: var(--bad); }
+.hbar .fill.fgb { background: var(--t1); }
+.hbar .fill.ac { background: var(--t2); }
+.sw.ac { background: var(--t2); } .sw.fgb { background: var(--t1); }
+
+/* quadrante notas x frequência */
+.quad { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr); gap: 0.45rem; }
+.quad .ax { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); display: flex; align-items: center; justify-content: center; text-align: center; }
+.quad .ax.v { writing-mode: vertical-rl; transform: rotate(180deg); }
+.qc { border: 1px solid var(--line); border-radius: 6px; padding: 0.6rem 0.75rem; background: var(--surface); text-align: left; cursor: pointer; color: var(--fg); display: grid; gap: 0.1rem; min-height: 5.2rem; }
+.qc:hover { background: var(--track); }
+.qc strong { font-family: var(--display); font-weight: 500; font-size: 1.7rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.qc span { font-family: var(--display); font-weight: 600; font-size: 1rem; }
+.qc small { color: var(--muted); font-size: 0.78rem; line-height: 1.25; }
+.qc.evasao { border-left: 5px solid var(--bad); } .qc.evasao strong { color: var(--bad-text); }
+.qc.academico { border-left: 5px solid var(--warn); }
+.qc.oculto { border-left: 5px solid var(--t2); }
+.qc.sem { border-left: 5px solid var(--ok); }
+.qc[aria-pressed="true"] { outline: 2px solid var(--brand-2); outline-offset: 1px; }
+
+/* selos */
+.selo { display: inline-block; font-size: 0.7rem; font-weight: 600; border-radius: 3px; padding: 0.05rem 0.35rem; white-space: nowrap; vertical-align: 0.1em; }
+.selo.evasao { background: var(--bad-tint); color: var(--bad-text); }
+.selo.academico { background: var(--warn-tint); color: var(--fg); border: 1px solid var(--warn); }
+.selo.oculto { background: var(--warn-tint); color: var(--fg); border: 1px solid var(--t2); }
+.selo.sem { background: var(--track); color: var(--muted); }
+
+/* abas da matriz */
+.abas { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.abas button { border: 0; background: var(--surface); color: var(--fg); padding: 0.35rem 0.9rem; cursor: pointer; font-weight: 600; }
+.abas button[aria-pressed="true"] { background: var(--brand); color: var(--on-brand); }
+
+/* células de frequência */
+.matrix th.grp { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); border-left: 2px solid var(--line); }
+.matrix th.grp.ac { color: var(--fg); box-shadow: inset 0 -3px 0 var(--t2); }
+.matrix th.cmp { font-size: 0.72rem; line-height: 1.15; white-space: normal; min-width: 3.4rem; max-width: 5.5rem; }
+.matrix th.cmp.ac { box-shadow: inset 0 -3px 0 var(--t2); }
+.matrix td.f { text-align: center; }
+.matrix td.f.b0 { border-left: 2px solid var(--line); }
+.matrix td.bl { text-align: center; font-weight: 600; border-left: 2px solid var(--line); }
+.matrix td.x { color: var(--bad-text); background: var(--bad-tint); font-weight: 600; }
+.matrix td.a { color: var(--fg); background: var(--warn-tint); font-weight: 600; }
+.matrix td.n3.lanc { font-weight: 600; }
+.matrix td.n3.lanc.rec { color: var(--bad-text); background: var(--bad-tint); }
+.matrix td.nec.pend { font-style: italic; }
+.matrix tbody tr { cursor: pointer; }
+.matrix tbody tr:hover th, .matrix tbody tr:hover td:not(.x):not(.a):not(.rec):not(.aten) { background: var(--track); }
+
+/* ficha do estudante */
+dialog.ficha { width: min(100% - 1.5rem, 58rem); max-height: calc(100vh - 2rem); padding: 0; border: 0; border-radius: 8px; background: var(--surface); color: var(--fg); box-shadow: 0 20px 50px rgba(5, 15, 40, 0.45); }
+dialog.ficha::backdrop { background: rgba(10, 20, 45, 0.55); }
+.ficha header { background: var(--brand); color: var(--on-brand); padding: 0.9rem 1.2rem; display: flex; justify-content: space-between; gap: 1rem; align-items: start; position: sticky; top: 0; z-index: 1; }
+.ficha header h2 { font-size: 1.45rem; font-weight: 600; }
+.ficha header p { font-family: var(--display); opacity: 0.9; }
+.ficha header button { background: transparent; color: var(--on-brand); border: 1px solid rgba(255,255,255,0.7); border-radius: 3px; padding: 0.2rem 0.7rem; cursor: pointer; }
+.ficha .corpo { padding: 1rem 1.2rem 1.3rem; display: grid; gap: 1rem; }
+.ficha h3 { font-size: 1.1rem; font-weight: 600; }
+.ficha .resumo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.ficha .obs { background: var(--warn-tint); border: 1px solid var(--gold); border-radius: 4px; padding: 0.45rem 0.7rem; font-size: 0.85rem; }
+.budget { display: grid; gap: 0.4rem; }
+.brow { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr) 8.5rem; gap: 0.6rem; align-items: center; font-size: 0.85rem; }
+.brow .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btrack { position: relative; height: 0.9rem; background: var(--track); border-radius: 0 4px 4px 0; }
+.btrack .fill { position: absolute; inset: 0 auto 0 0; background: var(--muted); border-radius: 0 4px 4px 0; min-width: 2px; max-width: 100%; }
+.btrack .lim { position: absolute; top: -0.2rem; bottom: -0.2rem; width: 2px; background: var(--fg); }
+.brow.a .fill { background: var(--warn); } .brow.x .fill { background: var(--bad); }
+.brow .val { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.brow .val small { display: block; color: var(--muted); font-size: 0.75rem; }
+.brow.x .val b { color: var(--bad-text); }
+.ficha table.rank td.ok { color: var(--ok-text); }
+.ficha table.rank td.ruim { color: var(--bad-text); font-weight: 600; }
+.ficha table.rank td.meio { font-weight: 600; }
+
+@media (max-width: 1000px) {
+  .filters .wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ficha .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .filters .wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brow { grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr) 6.5rem; }
+  .ficha .resumo { grid-template-columns: minmax(0, 1fr); }
+  .top .sessao { flex-wrap: wrap; }
+  .btn-pdf { white-space: normal; text-align: left; }
+}
+@media print {
+  .filters, .stripe, .tema, #sair { display: none !important; }
+}
+
+/* ---------- v2: compensações, registro e modo administração ---------- */
+.hbtn { display: inline-flex; align-items: center; background: transparent; color: var(--on-brand); border: 1px solid rgba(255,255,255,0.7); border-radius: 3px; padding: 0.2rem 0.7rem; cursor: pointer; font-family: var(--display); font-size: 0.95rem; }
+.note.fonte { margin-top: 0.6rem; }
+small.cp { display: block; font-size: 0.68rem; font-weight: 600; color: var(--ok-text); white-space: nowrap; }
+.rank td small.cp, .ficha small.cp { display: inline; }
+.btrack .cmpz { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, var(--ok) 0 3px, transparent 3px 6px); border: 1px solid var(--ok); box-sizing: border-box; }
+.leg-cmp { display: inline-block; width: 1.4rem; height: 0.75rem; vertical-align: -0.05rem; background: repeating-linear-gradient(135deg, var(--ok) 0 3px, transparent 3px 6px); border: 1px solid var(--ok); }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 700; border: 1px solid var(--line); border-radius: 3px; padding: 0 0.3rem; background: var(--track); }
+.comp-tab td.acoes { white-space: nowrap; text-align: right; }
+.ficha button, dialog.dlg button { cursor: pointer; }
+.comp-tab td.acoes button, .botoes button, .comp-form button { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 4px; padding: 0.3rem 0.7rem; font-weight: 600; }
+.botoes button.forte, .comp-form button.forte, .adm-acoes button.forte { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
+button.perigo { background: var(--bad) !important; color: #fff !important; border-color: var(--bad) !important; }
+.comp-form { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 0.7fr) minmax(0, 0.9fr) minmax(0, 2fr); gap: 0.6rem; align-items: end; padding: 0.75rem; border: 1px dashed var(--gold); border-radius: 6px; background: var(--warn-tint); }
+.comp-form .botoes, .comp-form .aviso-form { grid-column: 1 / -1; }
+.aviso-form { font-size: 0.85rem; color: var(--fg); font-weight: 600; }
+.ficha .field input, .ficha .field select, dialog.dlg .field input, dialog.dlg .field select { width: 100%; padding: 0.4rem 0.5rem; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--fg); font: inherit; }
+.ficha .field label, dialog.dlg .field label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.2rem; }
+dialog.dlg { width: min(100% - 1.5rem, 46rem); }
+.form-adm { display: grid; gap: 0.8rem; }
+.form-adm .linha3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.form-adm .pins { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-adm .check { display: flex; gap: 0.5rem; align-items: center; font-size: 0.92rem; }
+dialog .erro { color: var(--bad-text); font-weight: 600; }
+.registro { list-style: none; display: grid; gap: 0.45rem; max-height: 60vh; overflow: auto; }
+.registro li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0.6rem; font-size: 0.88rem; border-bottom: 1px solid var(--line); padding-bottom: 0.4rem; }
+.registro time { color: var(--muted); font-variant-numeric: tabular-nums; }
+ul.pend { display: grid; gap: 0.35rem; padding-left: 1.1rem; font-size: 0.9rem; max-height: 55vh; overflow: auto; }
+.drop { display: grid; place-items: center; min-height: 7rem; border: 2px dashed var(--line); border-radius: 8px; cursor: pointer; color: var(--muted); text-align: center; padding: 1rem; margin: 0.6rem 0; }
+.drop.sobre { border-color: var(--brand-2); background: var(--track); }
+.drop input { display: none; }
+#previa { display: grid; gap: 0.7rem; }
+.adminbar { background: var(--warn-tint); border-bottom: 3px solid var(--gold); color: var(--fg); }
+.adminbar .wrap { padding-top: 0.6rem; padding-bottom: 0.6rem; display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: center; justify-content: space-between; }
+.adm-info { font-size: 0.9rem; }
+.adm-alt { color: var(--bad-text); font-weight: 700; }
+.adm-acoes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.adm-acoes button { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 4px; padding: 0.3rem 0.7rem; font-weight: 600; cursor: pointer; }
+.adm-acoes button:disabled { opacity: 0.55; cursor: wait; }
+@media (max-width: 760px) {
+  .comp-form, .form-adm .linha3 { grid-template-columns: minmax(0, 1fr); }
+  .registro li { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
+}
+.brow { grid-template-columns: minmax(0, 12rem) minmax(0, 1fr) 9.5rem; }
+.brow .val small { white-space: normal; line-height: 1.25; }
+@media (max-width: 760px) { .brow { grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr) 7rem; } }
+.assinatura .wrap { padding: 0.6rem 0 0.9rem; font-size: 0.78rem; color: var(--muted); text-align: right; }
+</style>
+
+<section id="login" class="login band">
+  <div class="login-card">
+    <header>
+      <h1>Frequência e Rendimento</h1><p id="l-sub">Ensino Médio · 2026</p>
+      <button class="tema" type="button" aria-label="Alternar tema claro ou escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg><span></span></button>
+    </header>
+    <form id="login-form" autocomplete="off">
+      <p class="atualizado" id="l-atualizado"></p>
+      <div class="field"><label for="l-senha">Senha</label><input id="l-senha" type="password" inputmode="numeric" autocomplete="current-password" required></div>
+      <p id="l-erro" class="erro" role="alert" hidden></p>
+      <button id="l-entrar" type="submit">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<div id="app" hidden>
+<header class="top band">
+  <div class="wrap">
+    <h1 id="titulo">Frequência e Rendimento</h1>
+    <p id="subtitulo"></p>
+    <div class="sessao">
+      <button class="tema" type="button" aria-label="Alternar tema claro ou escuro"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg><span></span></button>
+      <button id="reg" class="hbtn" type="button">Registro de alterações</button>
+      <button id="adm" class="hbtn" type="button" hidden>Administração</button>
+      <button id="sair" type="button">Sair</button>
+    </div>
+  </div>
+</header>
+<div class="filters band">
+  <div class="wrap">
+    <div class="field"><label for="f-serie">Série</label><select id="f-serie"><option value="">Todas</option></select></div>
+    <div class="field"><label for="f-turma">Turma</label><select id="f-turma"><option value="">Todas</option></select></div>
+    <div class="field"><label for="f-trilha">Trilha do itinerário</label><select id="f-trilha"><option value="">Todas</option></select></div>
+    <div class="field"><label for="f-sit">Situação</label><select id="f-sit"><option value="">Todos</option></select></div>
+    <button id="pdf" class="btn-pdf" type="button" disabled>PDF: escolha a turma</button>
+    <button id="pdf-todas" class="btn-pdf" type="button">PDFs de todas as turmas</button>
+  </div>
+</div>
+
+<div id="admin-bar" class="adminbar band" hidden>
+  <div class="wrap">
+    <div class="adm-info"><b>Modo administração</b> <span id="adm-repo"></span><span id="adm-versao"></span><span id="adm-pend" class="adm-alt" hidden></span></div>
+    <div class="adm-acoes">
+      <button type="button" id="adm-carregar">Carregar relatórios</button>
+      <button type="button" id="adm-pendencias">Pendências</button>
+      <button type="button" id="adm-publicar" class="forte">Publicar</button>
+      <button type="button" id="adm-baixar">Baixar arquivo</button>
+      <button type="button" id="adm-esquecer">Esquecer chave neste computador</button>
+      <button type="button" id="adm-sair">Sair do modo administração</button>
+    </div>
+  </div>
+</div>
+
+<main class="band">
+  <div class="wrap" style="display:grid; gap:1.1rem">
+    <section class="kpis" aria-label="Indicadores do filtro">
+      <div class="kpi"><span>Estudantes</span><strong id="k-alunos">0</strong><small id="k-alunos-s"></small></div>
+      <div class="kpi bad"><span>Bloco FGB + IFA acima do limite</span><strong id="k-bloco">0</strong><small id="k-bloco-s"></small></div>
+      <div class="kpi bad"><span>Com AC acima do limite</span><strong id="k-ac">0</strong><small id="k-ac-s"></small></div>
+      <div class="kpi bad"><span>Faltas a compensar</span><strong id="k-comp">0</strong><small id="k-comp-s"></small></div>
+      <div class="kpi warn"><span>Perto do limite</span><strong id="k-perto">0</strong><small>75% do limite ou mais, sem ter passado</small></div>
+      <div class="kpi bad"><span>Em recuperação nas notas</span><strong id="k-notas">0</strong><small id="k-notas-s"></small></div>
+    </section>
+
+    <section class="insights" aria-label="Leitura de gestão">
+      <h2>Leitura de gestão</h2>
+      <ul id="insights"></ul>
+      <p class="note fonte">Os dados vêm do SIEPE: faltas e notas dos relatórios "Rendimento Escolar"; compensações transcritas do SIEPE. Em caso de divergência, vale o SIEPE.</p>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head"><h2>Atividades Complementares: estudantes acima do limite</h2><span class="sub">cada componente reprova sozinho (limite: 25% da carga anual)</span></div>
+        <div id="c-ac" class="hbars"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Bloco FGB + IFA: faltas em relação ao limite</h2><span class="sub">limite: 25% de 1.200 aulas = 300 faltas</span></div>
+        <div id="c-bloco" class="cols"></div>
+        <p class="note">Cinza: até 75% do limite; amarelo: perto do limite; vermelho: acima.</p>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Notas × frequência</h2><span class="sub">clique num quadro para filtrar</span></div>
+        <div id="c-quad" class="quad"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Faltas por componente</h2>
+          <div class="legend"><span><i class="sw fgb"></i>FGB e IFA</span><span><i class="sw ac"></i>Atividades Complementares</span></div></div>
+        <p class="note" style="margin-top:-0.4rem">% da carga anual do componente já perdida, em média</p>
+        <div id="c-comp" class="hbars"></div>
+        <button id="c-comp-mais" class="link" type="button" hidden></button>
+      </section>
+      <section class="panel wide">
+        <div class="panel-head"><h2>Turmas</h2><span class="sub">clique numa linha para filtrar</span></div>
+        <div class="scroll"><table class="rank" id="turmas"></table></div>
+      </section>
+      <section class="panel wide" id="sec-matriz">
+        <div class="panel-head"><h2>Estudantes</h2><span class="sub" id="m-sub"></span></div>
+        <div class="toolbar">
+          <div class="field"><label for="t-busca">Buscar estudante</label><input id="t-busca" type="search" placeholder="Nome ou ID"></div>
+          <div class="field"><label for="t-ordem">Ordenar por</label><select id="t-ordem"><option value="prio">Prioridade</option><option value="nome">Nome</option><option value="id">ID (turma e chamada)</option></select></div>
+          <div class="abas" role="group" aria-label="Visão da tabela"><button type="button" data-v="freq" aria-pressed="true">Faltas</button><button type="button" data-v="notas" aria-pressed="false">Notas</button></div>
+        </div>
+        <div id="tabela"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<footer class="assinatura band"><div class="wrap">Created by Fang and Claw 2026 · v2.0</div></footer>
+<div class="stripe" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+</div>
+<div id="tip" hidden></div>
+<dialog class="ficha" id="ficha"></dialog>
+<dialog class="ficha dlg" id="dlg"></dialog>
+<script id="dados" type="application/json">{"escola":"Erem Aires Gama","etapa":"Ensino M\u00e9dio","ano":2026,"atualizado":"23/11/2026","versao":1,"publicado":"2026-11-26T13:21:18+00:00","sal":"UTacFrci8MFSqu4supwS2g==","iv":"ulnO4JDjj2tB8cVN","ct":"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","iteracoes":600000}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+let ENV = JSON.parse(document.getElementById("dados").textContent);
+const POR_PAGINA = 50, TOP_COMP = 12;
+const $ = id => document.getElementById(id);
+const num = n => n.toLocaleString("pt-BR");
+const pct = (a, b) => b ? (100 * a / b).toLocaleString("pt-BR", { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + "%" : "–";
+const dec = v => v === null || v === undefined ? "–" : (+v.toFixed(2)).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const plural = (n, um, varios) => `${num(n)} ${n === 1 ? um : varios}`;
+
+// ---------- Tema claro / escuro ----------
+const escuroSistema = () => matchMedia("(prefers-color-scheme: dark)").matches;
+const temaAtual = () => document.documentElement.dataset.theme || (escuroSistema() ? "dark" : "light");
+function rotularTema() {
+  document.querySelectorAll(".tema span").forEach(s => { s.textContent = temaAtual() === "dark" ? "Tema claro" : "Tema escuro"; });
+}
+document.querySelectorAll(".tema").forEach(b => b.addEventListener("click", () => {
+  const t = temaAtual() === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("tema", t); } catch (e) {}
+  rotularTema();
+}));
+rotularTema();
+
+// ---------- Acesso: a senha decifra os dados ----------
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function abrir(senha) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(senha), "PBKDF2", false, ["deriveKey"]);
+  const chave = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(ENV.sal), iterations: ENV.iteracoes, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const buf = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(ENV.iv) }, chave, b64(ENV.ct));
+  return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).json();
+}
+
+// ---------- Regras ----------
+// Bloco FGB + IFA: faltas somadas sobre a carga somada; acima do limite se passar de 25% da carga.
+// AC: cada componente sozinho, mesmo limite (25% da carga do componente).
+// Notas: necessária no 3º trimestre = 17 − (1º + 2º); recuperação se > 10; atenção se > 8.
+//        Com a nota do 3º trimestre lançada: soma final abaixo de 17 = recuperação.
+let D, SENHA, C, T, A = [], CIDX = {};
+const TAGS = { AM: "Atestado Médico", DC: "Declaração de Comparecimento", DP: "Declaração dos Pais", EA: "Estudante Atleta",
+  EG: "Estudante Gestante", ET: "Estudante Trabalhador", FTE: "Falta de Transporte Escolar", OCO: "Outros Casos Omissos", PGM: "Programa Ganhe o Mundo" };
+const normal = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().split(/\s+/).filter(Boolean).join(" ");
+const dataHora = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
+const QUAD = {
+  evasao: ["Risco de evasão", "notas e frequência"],
+  academico: ["Problema acadêmico", "só notas"],
+  oculto: ["Risco oculto", "só frequência: o RT não mostra"],
+  sem: ["Sem alerta", "notas e frequência em dia"],
+};
+const QORD = { evasao: 0, oculto: 1, academico: 2, sem: 3 };
+const SIT = [["alerta", "Com algum alerta"], ["evasao", "Risco de evasão"], ["oculto", "Risco oculto"], ["academico", "Problema acadêmico"],
+  ["sem", "Sem alerta"], ["bloco", "Bloco FGB + IFA acima"], ["ac", "Com AC acima"], ["perto", "Perto do limite"], ["notas", "Em recuperação nas notas"]];
+
+// f = faltas do relatório (total, como está); c = já compensadas; ef = f − c, o que conta para o limite.
+function situacaoFaltas(f, c, carga) {
+  const lim = carga * (1 - D.regras.freqMin), ef = f - c;
+  return { f, c, ef, carga, lim, st: ef > lim ? "x" : ef >= lim * D.regras.alerta ? "a" : "", comp: Math.max(0, Math.ceil(ef - lim)) };
+}
+function situacaoNota(v) {
+  const [, , , n1, n2, n3] = v;
+  if (n1 === null || n2 === null) return null;
+  if (n3 !== null) {
+    const s = +(n1 + n2 + n3).toFixed(2);
+    return { lanc: true, soma: s, rec: s < D.regras.somaMin };
+  }
+  const nec = Math.max(0, +(D.regras.somaMin - n1 - n2).toFixed(2));
+  return { lanc: false, nec, rec: nec > D.regras.rec, aten: nec > D.regras.aten && nec <= D.regras.rec };
+}
+
+function preparar() {
+  C = D.comps.map((c, i) => ({ ...c, i }));
+  CIDX = Object.fromEntries(C.map(c => [normal(c.n), c.i]));
+  T = D.turmas.map((t, i) => ({ ...t, i, cargas: Object.fromEntries(Object.entries(t.cargas).map(([k, v]) => [+k, v])) }));
+  const porK = {};
+  for (const e of D.compensacoes) (porK[e.k] = porK[e.k] || []).push(e);
+  A = D.alunos.map(a => {
+    const t = T[a.t], comps = porK[a.k] || [], cmp = {};
+    for (const e of comps) { const i = CIDX[normal(e.comp)]; if (i !== undefined) cmp[i] = (cmp[i] || 0) + e.qtd; }
+    const fal = {}, ac = [], notas = {};
+    let fb = 0, cb = 0, ccb = 0;
+    for (const [k, v] of Object.entries(a.c)) {
+      const i = +k, carga = t.cargas[i];
+      const tot = (v[0] || 0) + (v[1] || 0) + (v[2] || 0);
+      fal[i] = tot;
+      if (C[i].b === "AC") ac.push({ i, ...situacaoFaltas(tot, cmp[i] || 0, carga) });
+      else {
+        fb += tot; cb += carga; ccb += cmp[i] || 0;
+        notas[i] = situacaoNota(v);
+      }
+    }
+    const bloco = situacaoFaltas(fb, ccb, cb);
+    const compTotal = Object.values(cmp).reduce((s, x) => s + x, 0);
+    ac.sort((x, y) => x.i - y.i);
+    const acX = ac.filter(x => x.st === "x"), acA = ac.filter(x => x.st === "a");
+    const nRec = Object.values(notas).filter(n => n && n.rec).length;
+    const freq = bloco.st === "x" || acX.length > 0;
+    const quad = freq && nRec ? "evasao" : nRec ? "academico" : freq ? "oculto" : "sem";
+    const perto = !freq && (bloco.st === "a" || acA.length > 0);
+    const aComp = bloco.comp + acX.reduce((s, x) => s + x.comp, 0);
+    return { ...a, turma: t, fal, ac, acX, acA, notas, nRec, bloco, freq, quad, perto, aComp, cmp, comps, compTotal,
+      busca: (a.nome + " " + a.id).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() };
+  });
+}
+
+// ---------- Filtros ----------
+const fSer = $("f-serie"), fTur = $("f-turma"), fTri = $("f-trilha"), fSit = $("f-sit"), btnPdf = $("pdf"), btnTodas = $("pdf-todas");
+function opcoes(sel, itens) {
+  const atual = sel.value;
+  sel.length = 1;
+  itens.forEach(([v, t]) => sel.add(new Option(t, v)));
+  sel.value = itens.some(([v]) => String(v) === atual) ? atual : "";
+}
+function montarFiltros() {
+  opcoes(fSer, [...new Set(T.map(t => t.serie))].sort().map(s => [s, `${s}º ano`]));
+  opcoes(fTri, [...new Set(T.map(t => t.trilha))].sort().map(s => [s, s]));
+  const sit = fSit.value;
+  fSit.length = 1;
+  SIT.forEach(([v, t]) => fSit.add(new Option(t, v)));
+  fSit.value = sit;
+  atualizarTurmas();
+}
+function atualizarTurmas() {
+  opcoes(fTur, T.filter(t => (!fSer.value || t.serie === +fSer.value) && (!fTri.value || t.trilha === fTri.value))
+    .map(t => [t.i, `${t.id} · ${t.fgb} / ${t.it}`]));
+}
+const turmasFiltro = () => T.filter(t => (!fSer.value || t.serie === +fSer.value) && (!fTri.value || t.trilha === fTri.value) && (fTur.value === "" || t.i === +fTur.value));
+const passaSit = (a, s) => !s || (s === "alerta" ? a.freq || a.nRec > 0 || a.perto : s in QUAD ? a.quad === s : s === "bloco" ? a.bloco.st === "x"
+  : s === "ac" ? a.acX.length > 0 : s === "perto" ? a.perto : s === "notas" ? a.nRec > 0 : true);
+
+// ---------- Tooltip ----------
+const tip = $("tip");
+document.addEventListener("pointerover", ev => {
+  const el = ev.target.closest("[data-tip]");
+  if (!el) { tip.hidden = true; return; }
+  tip.textContent = el.dataset.tip;
+  tip.hidden = false;
+});
+document.addEventListener("pointermove", ev => {
+  if (tip.hidden) return;
+  tip.style.left = Math.min(ev.clientX + 14, innerWidth - tip.offsetWidth - 8) + "px";
+  tip.style.top = (ev.clientY + 16) + "px";
+});
+
+// ---------- Agregação ----------
+function resumo(al) {
+  const r = { n: al.length, bloco: 0, ac: 0, acCasos: 0, comp: 0, compBloco: 0, compAC: 0, perto: 0, notas: 0, quad: { evasao: 0, academico: 0, oculto: 0, sem: 0 }, semLanc: 0, jaComp: 0 };
+  for (const a of al) {
+    r.jaComp += a.compTotal;
+    if (a.bloco.st === "x") r.bloco++;
+    if (a.acX.length) r.ac++;
+    r.acCasos += a.acX.length;
+    r.compBloco += a.bloco.comp; r.compAC += a.acX.reduce((s, x) => s + x.comp, 0);
+    if (a.perto) r.perto++;
+    if (a.nRec) r.notas++;
+    r.quad[a.quad]++;
+    if (a.obs.length) r.semLanc++;
+  }
+  r.comp = r.compBloco + r.compAC;
+  return r;
+}
+
+let ALS = [], ALS_SIT = [];
+function kpis(R, ts) {
+  $("k-alunos").textContent = num(R.n);
+  $("k-alunos-s").textContent = `${plural(ts.length, "turma", "turmas")}`;
+  $("k-bloco").textContent = num(R.bloco);
+  $("k-bloco-s").textContent = `${pct(R.bloco, R.n)} dos estudantes`;
+  $("k-ac").textContent = num(R.ac);
+  $("k-ac-s").textContent = `${pct(R.ac, R.n)} · ${plural(R.acCasos, "componente", "componentes")} × estudante`;
+  $("k-comp").textContent = num(R.comp);
+  $("k-comp-s").textContent = `bloco ${num(R.compBloco)} · AC ${num(R.compAC)} · já compensadas ${num(R.jaComp)}`;
+  $("k-perto").textContent = num(R.perto);
+  $("k-notas").textContent = num(R.notas);
+  $("k-notas-s").textContent = "precisam de mais de 10 no 3º trimestre, ou soma final abaixo de 17";
+}
+
+function insights(R, al, ts) {
+  const it = [];
+  const passou = al.filter(a => a.freq).length;
+  if (passou) it.push(`<b>${num(passou)} estudantes (${pct(passou, R.n)})</b> já passaram do limite de faltas no bloco FGB + IFA ou em algum componente de AC. Sem compensação no fim do ano, isso reprova por frequência: hoje são <b>${num(R.comp)} faltas a compensar</b>.`);
+  else it.push("Nenhum estudante passou do limite de faltas neste filtro.");
+  const porAC = C.filter(c => c.b === "AC").map(c => ({ c, n: al.filter(a => a.acX.some(x => x.i === c.i)).length })).sort((x, y) => y.n - x.n);
+  if (porAC[0] && porAC[0].n) it.push(`O componente de AC com mais estudantes acima do limite é <b>${esc(porAC[0].c.n)}</b> (${num(porAC[0].n)}), seguido de ${esc(porAC[1].c.n)} (${num(porAC[1].n)}).`);
+  const dobro = al.filter(a => a.bloco.ef > 2 * a.bloco.lim);
+  if (dobro.length) it.push(`<b>${plural(dobro.length, "estudante já perdeu", "estudantes já perderam")} mais da metade da carga anual do bloco FGB + IFA</b>. Nesses casos o problema é abandono: busca ativa e contato com a família antes de pensar em compensação.`);
+  if (R.quad.oculto) it.push(`<b>${plural(R.quad.oculto, "estudante está", "estudantes estão")} sem recuperação nas notas, mas acima do limite de faltas</b> (risco oculto). O Relatório RT não mostra esses casos.`);
+  if (R.perto) it.push(`<b>${plural(R.perto, "estudante está", "estudantes estão")}</b> com 75% do limite ou mais em algum ponto, sem ter passado: ainda dá para evitar.`);
+  if (ts.length > 1) {
+    const pt = ts.map(t => { const x = al.filter(a => a.turma === t); return { t, n: x.length, f: x.filter(a => a.freq).length }; }).filter(x => x.n).sort((p, q) => q.f / q.n - p.f / p.n)[0];
+    if (pt && pt.f) it.push(`Turma com maior proporção de estudantes acima de algum limite: <b>${esc(pt.t.id)}</b> (${pct(pt.f, pt.n)}, ${num(pt.f)} de ${num(pt.n)}).`);
+  }
+  if (R.notas) it.push(`${plural(R.notas, "estudante está", "estudantes estão")} em recuperação nas notas em ao menos um componente.`);
+  if (R.jaComp) it.push(`${plural(R.jaComp, "falta já foi compensada", "faltas já foram compensadas")} neste filtro; os alertas e as faltas a compensar já as descontam.`);
+  if (R.semLanc) it.push(`${plural(R.semLanc, "estudante tem", "estudantes têm")} faltas de algum trimestre não lançadas no sistema; elas contam como 0, então os números desses estudantes podem estar subestimados.`);
+  $("insights").innerHTML = it.map(s => `<li>${s}</li>`).join("");
+}
+
+function graficoAC(al) {
+  const lista = C.filter(c => c.b === "AC").map(c => {
+    const cursam = al.filter(a => a.ac.some(x => x.i === c.i));
+    return { c, n: cursam.filter(a => a.acX.some(x => x.i === c.i)).length, tot: cursam.length };
+  }).filter(x => x.tot).sort((x, y) => y.n - x.n);
+  const max = Math.max(1, ...lista.map(x => x.n));
+  $("c-ac").innerHTML = lista.length ? lista.map(x => `<div class="hbar" data-tip="${esc(x.c.n)}: ${num(x.n)} de ${num(x.tot)} estudantes acima de ${x.c.n === "Leitura e Produção Textual" ? 10 : 20} faltas">
+    <span class="lbl">${esc(x.c.n)}</span><span class="track"><span class="fill" style="width:${100 * x.n / max}%"></span></span>
+    <span class="val"><b>${num(x.n)}</b> <small>${pct(x.n, x.tot)}</small></span></div>`).join("") : `<p class="empty">Sem estudantes.</p>`;
+}
+
+function graficoBloco(al) {
+  const rot = ["até 25%", "até 50%", "até 75%", "até 100%", "até 2×", "mais de 2×"];
+  const v = [0, 0, 0, 0, 0, 0];
+  for (const a of al) {
+    const r = a.bloco.ef / a.bloco.lim;
+    v[r <= 0.25 ? 0 : r <= 0.5 ? 1 : r < 0.75 ? 2 : r <= 1 ? 3 : r <= 2 ? 4 : 5]++;
+  }
+  const max = Math.max(1, ...v);
+  $("c-bloco").innerHTML = v.map((n, k) => `<div class="col q${k}" data-tip="${num(n)} estudantes (${pct(n, al.length)}) com faltas ${k < 4 ? rot[k] + " do limite" : k === 4 ? "acima do limite, até o dobro" : "acima do dobro do limite"}">
+    <span class="n">${num(n)}</span><div class="bar-area"><div class="bar" style="height:${100 * n / max}%"></div></div><span class="x">${rot[k]}</span></div>`).join("");
+}
+
+function graficoQuad(R) {
+  const card = k => `<button type="button" class="qc ${k}" data-q="${k}" aria-pressed="${fSit.value === k}"><strong>${num(R.quad[k])}</strong><span>${QUAD[k][0]}</span><small>${pct(R.quad[k], R.n)} · ${QUAD[k][1]}</small></button>`;
+  $("c-quad").innerHTML = `<span></span><span class="ax">Frequência acima do limite</span><span class="ax">Frequência dentro do limite</span>
+    <span class="ax v">Notas em recuperação</span>${card("evasao")}${card("academico")}
+    <span class="ax v">Notas em dia</span>${card("oculto")}${card("sem")}`;
+}
+
+let todasComp = false;
+function graficoComp(al) {
+  const lista = C.map(c => {
+    let f = 0, carga = 0, n = 0;
+    for (const a of al) if (c.i in a.fal) { f += a.fal[c.i]; carga += a.turma.cargas[c.i]; n++; }
+    return { c, f, carga, n };
+  }).filter(x => x.n).sort((x, y) => y.f / y.carga - x.f / x.carga);
+  const vis = todasComp ? lista : lista.slice(0, TOP_COMP);
+  const max = Math.max(0.0001, ...vis.map(x => x.f / x.carga));
+  $("c-comp").innerHTML = vis.map(x => `<div class="hbar" data-tip="${esc(x.c.n)}: ${num(x.f)} faltas de ${num(x.n)} estudantes; ${pct(x.f, x.carga)} da carga anual">
+    <span class="lbl">${esc(x.c.n.length > 26 ? x.c.s : x.c.n)}</span><span class="track"><span class="fill ${x.c.b === "AC" ? "ac" : "fgb"}" style="width:${100 * (x.f / x.carga) / max}%"></span></span>
+    <span class="val"><b>${pct(x.f, x.carga)}</b> <small>${num(Math.round(x.f / x.n))}/est.</small></span></div>`).join("") || `<p class="empty">Sem estudantes.</p>`;
+  const b = $("c-comp-mais");
+  b.hidden = lista.length <= TOP_COMP;
+  b.textContent = todasComp ? `Mostrar só os ${TOP_COMP} com mais faltas` : `Ver todos os ${lista.length} componentes`;
+}
+
+function tabelaTurmas(ts) {
+  const linhas = ts.map(t => {
+    const al = A.filter(a => a.turma === t), R = resumo(al);
+    return { t, R };
+  });
+  const max = Math.max(0.0001, ...linhas.map(x => x.R.n ? (x.R.quad.evasao + x.R.quad.oculto) / x.R.n : 0));
+  $("turmas").innerHTML = `<thead><tr><th>Turma</th><th>Série · trilha</th><th class="num">Estudantes</th><th class="num">Acima de algum limite</th>
+    <th class="num">Bloco acima</th><th class="num">AC acima</th><th class="num">Notas em recup.</th><th class="num">Risco de evasão</th><th class="num">Faltas a compensar</th><th class="num">Já compensadas</th><th>Dados de</th></tr></thead><tbody>` +
+    linhas.map(({ t, R }) => {
+      const f = R.quad.evasao + R.quad.oculto;
+      return `<tr data-turma="${t.i}"${fTur.value === String(t.i) ? ' style="background:var(--track)"' : ""}><td class="nome"><b>${esc(t.id)}</b> <small style="color:var(--muted)">${esc(t.fgb)} / ${esc(t.it)}</small></td>
+      <td>${t.serie}º ano · ${esc(t.trilha)}</td><td class="num">${num(R.n)}</td>
+      <td class="num"><span class="mini"><i style="width:${100 * (f / R.n) / max}%"></i></span><b>${pct(f, R.n)}</b> (${num(f)})</td>
+      <td class="num">${num(R.bloco)}</td><td class="num">${num(R.ac)}</td><td class="num">${num(R.notas)}</td><td class="num">${num(R.quad.evasao)}</td><td class="num">${num(R.comp)}</td><td class="num">${num(R.jaComp)}</td><td>${esc(t.data || "")}</td></tr>`;
+    }).join("") + "</tbody>";
+}
+
+// ---------- Matriz de estudantes ----------
+let visao = "freq", pagina = 0;
+const tBusca = $("t-busca"), tOrdem = $("t-ordem");
+function ordenar(lista) {
+  const o = tOrdem.value;
+  return lista.sort(o === "nome" ? (a, b) => a.nome.localeCompare(b.nome, "pt-BR")
+    : o === "id" ? (a, b) => a.id.localeCompare(b.id)
+    : (a, b) => QORD[a.quad] - QORD[b.quad] || b.aComp - a.aComp || (b.perto - a.perto) || b.bloco.ef / b.bloco.lim - a.bloco.ef / a.bloco.lim || a.nome.localeCompare(b.nome, "pt-BR"));
+}
+const cpNota = c => c ? `<small class="cp">${num(c)} comp.</small>` : "";
+const colunasDe = (lista, pred) => C.filter(c => pred(c) && lista.some(a => c.i in a.fal));
+const celAluno = a => `<th class="aluno" scope="row">${esc(a.nome)} <span class="selo ${a.quad}">${QUAD[a.quad][0]}</span><small>${esc(a.id)} · ${esc(a.turma.fgb)} / ${esc(a.turma.it)}</small></th>`;
+
+function tabela() {
+  const box = $("tabela");
+  const termo = tBusca.value.trim().normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const lista = ordenar(ALS_SIT.filter(a => !termo || a.busca.includes(termo)));
+  $("m-sub").textContent = `${plural(lista.length, "estudante", "estudantes")} · clique numa linha para abrir a ficha`;
+  if (!lista.length) { box.innerHTML = `<p class="empty">Nenhum estudante encontrado com esses filtros.</p>`; return; }
+  const paginas = Math.ceil(lista.length / POR_PAGINA);
+  pagina = Math.min(pagina, paginas - 1);
+  const vis = lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
+  let cab1, cab2, linhas;
+  if (visao === "freq") {
+    const cf = colunasDe(lista, c => c.b !== "AC"), ca = colunasDe(lista, c => c.b === "AC");
+    const nf = cf.filter(c => c.b === "FGB").length, ni = cf.length - nf;
+    cab1 = `<th class="grp" rowspan="2">Bloco<br>FGB + IFA</th><th class="grp" colspan="${nf}">FGB: faltas</th>${ni ? `<th class="grp" colspan="${ni}">IFA: faltas</th>` : ""}<th class="grp ac" colspan="${ca.length}">AC: faltas / limite</th>`;
+    cab2 = [...cf, ...ca].map(c => `<th class="cmp${c.b === "AC" ? " ac" : ""}" title="${esc(c.n)}">${esc(c.s)}</th>`).join("");
+    linhas = vis.map(a => {
+      const b = a.bloco;
+      const quando = ` · dados de ${a.turma.data}`;
+      const bl = `<td class="bl ${b.st}" data-tip="Bloco FGB + IFA: ${num(b.f)} faltas${b.c ? ` (${num(b.c)} já compensadas)` : ""}; limite ${num(Math.floor(b.lim))}${b.comp ? `; ${num(b.comp)} a compensar` : ""}${quando}">${num(b.f)}/${num(Math.floor(b.lim))}${cpNota(b.c)}</td>`;
+      const fx = cf.map((c, k) => `<td class="f${k === 0 ? " b0" : ""}${c.i in a.fal ? "" : " vazio"}"${c.i in a.fal ? ` data-tip="${esc(c.n)}: ${num(a.fal[c.i])} faltas${a.cmp[c.i] ? ` (${num(a.cmp[c.i])} já compensadas)` : ""}${quando}"` : ""}>${c.i in a.fal ? num(a.fal[c.i]) + cpNota(a.cmp[c.i]) : "·"}</td>`).join("");
+      const ax = ca.map((c, k) => {
+        const x = a.ac.find(y => y.i === c.i);
+        if (!x) return `<td class="f vazio${k === 0 ? " b0" : ""}">·</td>`;
+        return `<td class="f ${x.st}${k === 0 ? " b0" : ""}" data-tip="${esc(c.n)}: ${num(x.f)} faltas${x.c ? ` (${num(x.c)} já compensadas)` : ""}, limite ${num(Math.floor(x.lim))}${x.comp ? `; ${num(x.comp)} a compensar` : ""}${quando}">${num(x.f)}/${num(Math.floor(x.lim))}${cpNota(x.c)}</td>`;
+      }).join("");
+      return `<tr data-id="${esc(a.id)}">${celAluno(a)}${bl}${fx}${ax}</tr>`;
+    }).join("");
+    cab1 = `<tr><th class="aluno" rowspan="2">Estudante</th>${cab1}</tr><tr>${cab2}</tr>`;
+  } else {
+    const cn = colunasDe(lista, c => c.b !== "AC");
+    cab1 = `<tr><th class="aluno" rowspan="2">Estudante</th><th rowspan="2" title="Componentes em recuperação">Em<br>recup.</th>${cn.map(c => `<th class="disc" colspan="3" title="${esc(c.n)}">${esc(c.s)}</th>`).join("")}</tr>
+      <tr>${cn.map(() => `<th>1º</th><th>2º</th><th title="Nota do 3º trimestre, ou a nota necessária (em itálico) se ainda não lançada">3º</th>`).join("")}</tr>`;
+    linhas = vis.map(a => {
+      const cel = cn.map(c => {
+        if (!(c.i in a.fal)) return `<td class="n1 vazio">·</td><td class="n2 vazio">·</td><td class="nec vazio">·</td>`;
+        const v = a.c[c.i], s = a.notas[c.i];
+        let t3;
+        if (!s) t3 = `<td class="nec vazio" data-tip="Falta nota do 1º ou do 2º trimestre">–</td>`;
+        else if (s.lanc) t3 = `<td class="n3 lanc${s.rec ? " rec" : ""}" data-tip="3º trimestre lançado: soma ${dec(s.soma)}${s.rec ? " (abaixo de 17)" : ""}">${dec(v[5])}</td>`;
+        else t3 = `<td class="nec pend${s.rec ? " rec" : s.aten ? " aten" : ""}" data-tip="Precisa de ${dec(s.nec)} no 3º trimestre">${dec(s.nec)}</td>`;
+        return `<td class="n1">${dec(v[3])}</td><td class="n2">${dec(v[4])}</td>${t3}`;
+      }).join("");
+      return `<tr data-id="${esc(a.id)}">${celAluno(a)}<td class="qtd${a.nRec ? " tem" : ""}">${a.nRec}</td>${cel}</tr>`;
+    }).join("");
+  }
+  box.innerHTML = `${visao === "notas" ? `<p class="note" style="margin-bottom:0.5rem">3º: nota lançada (em vermelho, soma final abaixo de 17) ou, em itálico, a nota necessária (vermelho: acima de 10; amarelo: acima de 8).</p>` : `<p class="note" style="margin-bottom:0.5rem">Vermelho: acima do limite (reprova por frequência, salvo compensação); amarelo: 75% do limite ou mais. FGB e IFA contam juntos no bloco. Em verde, as faltas já compensadas: o número mostra o total, e a cor já as desconta.</p>`}
+    <div class="matrix-box"><table class="matrix"><thead>${cab1}</thead><tbody>${linhas}</tbody></table></div>
+    <div class="pager"><button type="button" data-p="-1" ${pagina ? "" : "disabled"}>Anterior</button>
+    <span>Página ${pagina + 1} de ${num(paginas)} · ${plural(lista.length, "estudante", "estudantes")}</span>
+    <button type="button" data-p="1" ${pagina < paginas - 1 ? "" : "disabled"}>Próxima</button></div>`;
+}
+
+// ---------- Ficha do estudante ----------
+function barra(rot, x, extra = "") {
+  const lim = Math.floor(x.lim), escala = 2 * x.lim, pl = 50;
+  const wEf = Math.min(100, 100 * Math.max(0, x.ef) / escala), wC = Math.min(100 - wEf, 100 * x.c / escala);
+  const sub = x.st === "x" ? `${num(x.comp)} a compensar` : `pode faltar mais ${num(Math.max(0, lim - x.ef))}`;
+  const txt = `${x.st === "x" ? `<b>${num(x.f)}/${num(lim)}</b>` : `${num(x.f)}/${num(lim)}`}<small>${x.c ? `${num(x.c)} já compensadas<br>` : ""}${sub}</small>`;
+  return `<div class="brow ${x.st}" data-tip="${esc(rot)}: ${num(x.f)} faltas${x.c ? `, ${num(x.c)} já compensadas` : ""}; limite ${num(lim)} (25% de ${num(x.carga)} aulas)${extra}"><span class="lbl">${esc(rot)}</span>
+    <span class="btrack"><span class="fill" style="width:${wEf}%"></span>${x.c ? `<span class="cmpz" style="left:${wEf}%;width:${wC}%"></span>` : ""}<span class="lim" style="left:${pl}%"></span></span><span class="val">${txt}</span></div>`;
+}
+const triTxt = n => `${n}º trimestre`;
+function linhasCompensacao(a) {
+  if (!a.comps.length) return `<p class="note">Nenhuma falta compensada registrada.</p>`;
+  const lista = [...a.comps].sort((x, y) => x.comp.localeCompare(y.comp, "pt-BR") || x.tri - y.tri);
+  return `<div class="scroll"><table class="rank comp-tab"><thead><tr><th>Componente</th><th>Trimestre</th><th class="num">Faltas compensadas</th><th>Motivo</th><th>Lançado em</th>${ADM ? "<th></th>" : ""}</tr></thead><tbody>` +
+    lista.map(e => `<tr data-cid="${esc(e.id)}"><td>${esc(e.comp)}</td><td>${triTxt(e.tri)}</td><td class="num">${num(e.qtd)}</td>
+      <td><span class="tag" title="${esc(TAGS[e.tag] || e.tag)}">${esc(e.tag)}</span> ${esc(TAGS[e.tag] || "")}</td><td>${dataHora(e.editado || e.quando)}</td>
+      ${ADM ? `<td class="acoes"><button type="button" data-ed="${esc(e.id)}">Editar</button> <button type="button" data-rm="${esc(e.id)}">Remover</button></td>` : ""}</tr>`).join("") + "</tbody></table></div>";
+}
+function formCompensacao(a, e) {
+  const comps = Object.keys(a.c).map(Number).sort((x, y) => x - y).map(i => C[i]);
+  const opc = comps.map(c => `<option value="${esc(c.n)}"${e && normal(e.comp) === normal(c.n) ? " selected" : ""}>${esc(c.n)} (${c.b})</option>`).join("");
+  return `<form class="comp-form" data-editando="${e ? esc(e.id) : ""}">
+    <div class="field"><label>Componente</label><select name="comp" required>${opc}</select></div>
+    <div class="field"><label>Trimestre</label><select name="tri">${[1, 2, 3].map(n => `<option value="${n}"${e && e.tri === n ? " selected" : ""}>${n}º</option>`).join("")}</select></div>
+    <div class="field"><label>Faltas compensadas</label><input name="qtd" type="number" min="1" step="1" required value="${e ? e.qtd : ""}"></div>
+    <div class="field"><label>Motivo</label><select name="tag" required>${Object.entries(TAGS).map(([k, v]) => `<option value="${k}"${e && e.tag === k ? " selected" : ""}>${k} · ${esc(v)}</option>`).join("")}</select></div>
+    <div class="botoes"><button type="submit" class="forte">${e ? "Salvar alteração" : "Adicionar compensação"}</button>${e ? ` <button type="button" data-cancelar>Cancelar</button>` : ""}</div>
+    <p class="aviso-form" hidden></p>
+  </form>`;
+}
+let fichaAtual = null;
+function ficha(id, editando) {
+  const a = A.find(x => x.id === id);
+  if (!a) return;
+  fichaAtual = id;
+  const t = a.turma, b = a.bloco;
+  const comps = Object.keys(a.c).map(Number).sort((x, y) => x - y);
+  const graduados = comps.filter(i => C[i].b !== "AC");
+  const notas = graduados.map(i => {
+    const v = a.c[i], s = a.notas[i];
+    const sit = !s ? ["–", ""] : s.lanc ? [s.rec ? `soma ${dec(s.soma)}: abaixo de 17` : `soma ${dec(s.soma)}: ok`, s.rec ? "ruim" : "ok"]
+      : [`precisa de ${dec(s.nec)}${s.rec ? " (recuperação)" : s.aten ? " (atenção)" : ""}`, s.rec ? "ruim" : s.aten ? "meio" : "ok"];
+    return `<tr><td>${esc(C[i].n)} <small style="color:var(--muted)">${C[i].b}</small></td><td class="num">${dec(v[3])}</td><td class="num">${dec(v[4])}</td><td class="num">${dec(v[5])}</td><td class="${sit[1]}">${sit[0]}</td><td class="num">${num(a.fal[i])}${a.cmp[i] ? ` <small class="cp">${num(a.cmp[i])} comp.</small>` : ""}</td></tr>`;
+  }).join("");
+  const ed = editando ? a.comps.find(e => e.id === editando) : null;
+  const dlg = $("ficha");
+  dlg.innerHTML = `<header><div><h2>${esc(a.nome)}</h2><p>${esc(a.id)} · ${t.serie}º ano · ${esc(t.fgb)} / ${esc(t.it)} · ${esc(t.trilha)} · dados de ${esc(t.data)}</p></div><button type="button" id="fechar">Fechar</button></header>
+    <div class="corpo">
+      <div class="resumo">
+        <div class="kpi ${a.quad === "sem" ? "ok" : "bad"}"><span>Situação</span><strong style="font-size:1.35rem">${QUAD[a.quad][0]}</strong><small>${QUAD[a.quad][1]}</small></div>
+        <div class="kpi ${a.aComp ? "bad" : ""}"><span>Faltas a compensar</span><strong>${num(a.aComp)}</strong><small>bloco ${num(b.comp)} · AC ${num(a.aComp - b.comp)} · já compensadas ${num(a.compTotal)}</small></div>
+        <div class="kpi ${a.nRec ? "bad" : ""}"><span>Componentes em recuperação nas notas</span><strong>${num(a.nRec)}</strong><small>de ${num(graduados.length)} com nota</small></div>
+      </div>
+      ${a.obs.map(o => `<p class="obs">${esc(o)}</p>`).join("")}
+      <section class="budget"><h3>Faltas e limites</h3>
+        <p class="note">A marca vertical é o limite (25% da carga anual); a barra vai até o dobro do limite. <span class="leg-cmp"></span> faltas já compensadas: o número mostra o total; a cor e os alertas já as descontam.</p>
+        ${barra("Bloco FGB + IFA", b)}
+        ${a.ac.map(x => barra(C[x.i].n, x)).join("")}
+      </section>
+      <section class="comp-sec" style="display:grid; gap:0.5rem"><h3>Faltas compensadas</h3>
+        ${linhasCompensacao(a)}
+        ${ADM ? formCompensacao(a, ed) : ""}
+      </section>
+      <section style="display:grid; gap:0.5rem"><h3>Notas e faltas por componente (FGB e IFA)</h3>
+        <div class="scroll"><table class="rank"><thead><tr><th>Componente</th><th class="num">1º</th><th class="num">2º</th><th class="num">3º</th><th>Situação</th><th class="num">Faltas</th></tr></thead><tbody>${notas}</tbody></table></div>
+      </section>
+      <p class="note fonte">Os dados vêm do SIEPE. Em caso de divergência, vale o SIEPE.</p>
+    </div>`;
+  $("fechar").addEventListener("click", () => dlg.close());
+  if (!dlg.open) dlg.showModal();
+}
+$("ficha").addEventListener("click", ev => { if (ev.target === ev.currentTarget) ev.currentTarget.close(); });
+
+// ---------- Atualização ----------
+let turmasAtuais = [];
+function atualizar() {
+  turmasAtuais = turmasFiltro();
+  const ids = new Set(turmasAtuais);
+  ALS = A.filter(a => ids.has(a.turma));
+  ALS_SIT = ALS.filter(a => passaSit(a, fSit.value));
+  const R = resumo(ALS_SIT);
+  kpis(R, turmasAtuais);
+  insights(R, ALS_SIT, turmasAtuais);
+  graficoAC(ALS_SIT);
+  graficoBloco(ALS_SIT);
+  graficoQuad(resumo(ALS));
+  graficoComp(ALS_SIT);
+  tabelaTurmas(turmasAtuais);
+  const umaTurma = fTur.value !== "";
+  btnPdf.disabled = !umaTurma;
+  btnPdf.textContent = umaTurma ? `PDF da turma ${T[+fTur.value].id}` : "PDF: escolha a turma";
+  btnTodas.textContent = `PDFs de ${turmasAtuais.length === T.length ? "todas as turmas" : plural(turmasAtuais.length, "turma", "turmas")} (.zip)`;
+  pagina = 0;
+  tabela();
+}
+
+fSer.addEventListener("change", () => { atualizarTurmas(); atualizar(); });
+fTri.addEventListener("change", () => { atualizarTurmas(); atualizar(); });
+fTur.addEventListener("change", atualizar);
+fSit.addEventListener("change", atualizar);
+$("c-comp-mais").addEventListener("click", () => { todasComp = !todasComp; graficoComp(ALS_SIT); });
+$("c-quad").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-q]");
+  if (!b) return;
+  fSit.value = fSit.value === b.dataset.q ? "" : b.dataset.q;
+  atualizar();
+  if (fSit.value) $("sec-matriz").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+$("turmas").addEventListener("click", ev => {
+  const tr = ev.target.closest("tr[data-turma]");
+  if (!tr) return;
+  const t = T[+tr.dataset.turma];
+  fSer.value = ""; fTri.value = ""; atualizarTurmas();
+  fTur.value = fTur.value === String(t.i) ? "" : String(t.i);
+  atualizar();
+});
+tBusca.addEventListener("input", () => { pagina = 0; tabela(); });
+tOrdem.addEventListener("change", () => { pagina = 0; tabela(); });
+document.querySelector(".abas").addEventListener("click", ev => {
+  const b = ev.target.closest("[data-v]");
+  if (!b) return;
+  visao = b.dataset.v;
+  document.querySelectorAll(".abas button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  tabela();
+});
+$("tabela").addEventListener("click", ev => {
+  const p = ev.target.closest("[data-p]");
+  if (p) { pagina += +p.dataset.p; tabela(); $("tabela").scrollIntoView({ block: "nearest" }); return; }
+  const tr = ev.target.closest("tr[data-id]");
+  if (tr) ficha(tr.dataset.id);
+});
+
+// ---------- PDF por turma (A4 paisagem), aberto com a senha do painel ----------
+const P = { brand: "#1f438c", gold: "#f7d661", warn: "#f0b400", warnTint: "#fdf6d8", bad: "#e02232", badText: "#c8101f", badTint: "#fdeced",
+  t1: "#3d8cc7", t2: "#e0a100", track: "#e6ecf5", fg: "#1a2233", muted: "#5d6880", line: "#dde4ef", white: "#ffffff", ok: "#37a63e",
+  flag: ["#3d8cc7", "#4aa734", "#f7bb01", "#dd1b12"] };
+
+function pdfTurma(t) {
+  const al = A.filter(a => a.turma === t).sort((a, b) => a.id.localeCompare(b.id));
+  const R = resumo(al);
+  const doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "landscape",
+    encryption: { userPassword: SENHA, ownerPassword: SENHA, userPermissions: ["print", "copy"] } });
+  const W = 297, H = 210, M = 10, CW = W - 2 * M;
+  const fonte = (size, bold) => doc.setFont("helvetica", bold ? "bold" : "normal").setFontSize(size);
+  const txt = (s, x, y, { size = 9, bold = false, color = P.fg, align = "left" } = {}) => { fonte(size, bold).setTextColor(color); doc.text(String(s), x, y, { align }); };
+  const caixa = (x, y, w, h, c) => doc.setFillColor(c).rect(x, y, w, h, "F");
+  const faixa = titulo => { caixa(0, 0, W, 13, P.brand); txt(titulo, M, 8.5, { size: 10, bold: true, color: P.white }); };
+
+  caixa(0, 0, W, 24, P.brand);
+  txt(`${D.escola.toUpperCase()}   ·   ${D.etapa.toUpperCase()} ${D.ano}   ·   FREQUÊNCIA E RENDIMENTO   ·   DADOS DE ${t.data}`, M, 8, { size: 7.5, bold: true, color: P.white });
+  txt(`Turma ${t.id} · ${t.serie}º ano · ${t.fgb} / ${t.it}`, M, 16, { size: 16, bold: true, color: P.white });
+  txt(`Trilha: ${t.trilha} (${t.anexo}) · Bloco FGB + IFA: limite de ${Math.floor(al[0] ? al[0].bloco.lim : 300)} faltas · AC: limite de 20 faltas por componente (10 em Leitura e Produção Textual)`, M, 21, { size: 7.5, color: P.white });
+
+  const ks = [["Estudantes", num(R.n), "", P.fg], ["Bloco acima do limite", num(R.bloco), pct(R.bloco, R.n), P.badText],
+    ["Com AC acima do limite", num(R.ac), pct(R.ac, R.n), P.badText], ["Faltas a compensar", num(R.comp), `bloco ${R.compBloco} · AC ${R.compAC} · já comp. ${R.jaComp}`, P.badText],
+    ["Perto do limite", num(R.perto), "75% do limite ou mais", P.fg], ["Em recuperação nas notas", num(R.notas), pct(R.notas, R.n), P.badText]];
+  const kw = (CW - 5 * 4) / 6;
+  ks.forEach(([r, v, s, c], k) => {
+    const x = M + k * (kw + 4);
+    doc.setDrawColor(P.line).setLineWidth(0.3).rect(x, 28, kw, 17);
+    txt(r, x + 2.5, 33, { size: 7.5, color: P.muted });
+    txt(v, x + 2.5, 40, { size: 13, bold: true, color: c });
+    txt(s, x + 2.5, 43.5, { size: 6.5, color: P.muted });
+  });
+
+  // AC acima do limite por componente
+  let y = 52;
+  txt("Atividades Complementares: estudantes acima do limite", M, y, { size: 10, bold: true });
+  const lac = C.filter(c => c.b === "AC").map(c => ({ c, n: al.filter(a => a.acX.some(x => x.i === c.i)).length })).sort((x, y) => y.n - x.n);
+  const gx = M + 45, gw = 70, mx = Math.max(1, ...lac.map(x => x.n));
+  lac.forEach((x, k) => {
+    const yy = y + 4 + k * 5.4;
+    txt(x.c.n.length > 30 ? x.c.s : x.c.n, M, yy + 3, { size: 7.5 });
+    caixa(gx, yy + 0.6, gw, 3, P.track);
+    if (x.n) caixa(gx, yy + 0.6, gw * x.n / mx, 3, P.bad);
+    txt(`${x.n}  (${pct(x.n, R.n)})`, gx + gw + 2, yy + 3, { size: 7.5, bold: true });
+  });
+
+  // Bloco: distribuição
+  const dx = M + 140;
+  txt("Bloco FGB + IFA: faltas em relação ao limite", dx, 52, { size: 10, bold: true });
+  const rot = ["até 25%", "até 50%", "até 75%", "até 100%", "até 2x", "mais de 2x"], v = [0, 0, 0, 0, 0, 0];
+  al.forEach(a => { const r = a.bloco.ef / a.bloco.lim; v[r <= 0.25 ? 0 : r <= 0.5 ? 1 : r < 0.75 ? 2 : r <= 1 ? 3 : r <= 2 ? 4 : 5]++; });
+  const vmax = Math.max(1, ...v), bw = 14, gap = 6, base = 92, alt = 30;
+  v.forEach((n, k) => {
+    const x = dx + 4 + k * (bw + gap), h = alt * n / vmax;
+    caixa(x, base - h, bw, Math.max(0.3, h), k < 3 ? P.muted : k === 3 ? P.warn : P.bad);
+    txt(num(n), x + bw / 2, base - h - 1.5, { size: 7.5, bold: true, align: "center" });
+    txt(rot[k], x + bw / 2, base + 4, { size: 7, color: P.muted, align: "center" });
+  });
+  doc.setDrawColor(P.line).line(dx, base, dx + 6 * (bw + gap) + 4, base);
+
+  // Estudantes com alerta
+  const prio = ordenarPdf(al.filter(a => a.quad !== "sem" || a.perto));
+  doc.autoTable({
+    startY: Math.max(y + 4 + lac.length * 5.4, 100) + 4, margin: { left: M, right: M, top: 18, bottom: 14 }, rowPageBreak: "avoid",
+    head: [["Estudante", "Situação", "Bloco (faltas/limite)", "A compensar", "AC acima do limite (faltas/limite)", "Notas em recuperação"]],
+    body: prio.length ? prio.map(a => [`${a.nome}\n${a.id}`, QUAD[a.quad][0] + (a.perto ? " · perto do limite" : ""), `${a.bloco.f}/${Math.floor(a.bloco.lim)}${pc(a.bloco.c)}`, a.aComp || "",
+      a.acX.map(x => `${C[x.i].s} ${x.f}/${Math.floor(x.lim)}${pc(x.c)}`).join("; ") + (a.acA.length ? (a.acX.length ? "; " : "") + "perto: " + a.acA.map(x => `${C[x.i].s} ${x.f}/${Math.floor(x.lim)}${pc(x.c)}`).join("; ") : ""),
+      graduadosRec(a).join(", ")]) : [["Nenhum estudante com alerta.", "", "", "", "", ""]],
+    styles: { fontSize: 7, cellPadding: 1.1, textColor: P.fg, lineColor: P.line, lineWidth: 0.1, valign: "middle" },
+    headStyles: { fillColor: P.brand, textColor: P.white, fontStyle: "bold" },
+    columnStyles: { 0: { cellWidth: 58 }, 1: { cellWidth: 38 }, 2: { cellWidth: 22, halign: "center" }, 3: { cellWidth: 18, halign: "center" } },
+    didParseCell: c => {
+      if (c.section !== "body" || !prio.length) return;
+      const a = prio[c.row.index];
+      if (c.column.index === 1 && a.quad === "evasao") { c.cell.styles.textColor = P.badText; c.cell.styles.fontStyle = "bold"; }
+      if (c.column.index === 2 && a.bloco.st === "x") { c.cell.styles.textColor = P.badText; c.cell.styles.fillColor = P.badTint; c.cell.styles.fontStyle = "bold"; }
+      if (c.column.index === 2 && a.bloco.st === "a") c.cell.styles.fillColor = P.warnTint;
+      if (c.column.index === 3 && a.aComp) { c.cell.styles.textColor = P.badText; c.cell.styles.fontStyle = "bold"; }
+    },
+    willDrawPage: d => { if (d.pageNumber > 1) faixa(`Turma ${t.id} · estudantes com alerta (continuação)`); },
+  });
+
+  // Faltas: estudante × componente
+  const cf = C.filter(c => c.b !== "AC" && c.i in t.cargas), ca = C.filter(c => c.b === "AC" && c.i in t.cargas);
+  doc.addPage(); faixa(`Turma ${t.id} · faltas por componente (acumuladas no ano)`);
+  txt("Bloco = FGB + IFA somados (faltas/limite). AC: cada componente tem seu limite. Vermelho: acima do limite; amarelo: 75% do limite ou mais. Entre parênteses: faltas já compensadas (os alertas já as descontam).", M, 18, { size: 7.5, color: P.muted });
+  const cols = [...cf, ...ca];
+  const largNome = 50, largB = 14, largC = (CW - largNome - largB) / cols.length;
+  doc.autoTable({
+    startY: 21, margin: { left: M, right: M, top: 18, bottom: 14 }, rowPageBreak: "avoid",
+    head: [["Estudante", "Bloco", ...cols.map(c => c.s)]],
+    body: al.map(a => [`${a.nome}\n${a.id}`, `${a.bloco.f}/${Math.floor(a.bloco.lim)}${pc(a.bloco.c)}`, ...cols.map(c => {
+      if (c.b !== "AC") return c.i in a.fal ? `${a.fal[c.i]}${pc(a.cmp[c.i])}` : "";
+      const x = a.ac.find(y => y.i === c.i);
+      return x ? `${x.f}/${Math.floor(x.lim)}${pc(x.c)}` : "";
+    })]),
+    styles: { fontSize: 6.3, cellPadding: 0.8, textColor: P.fg, lineColor: P.line, lineWidth: 0.1, halign: "center", valign: "middle" },
+    headStyles: { fillColor: P.brand, textColor: P.white, fontStyle: "bold", fontSize: 5.6 },
+    columnStyles: Object.assign({ 0: { halign: "left", cellWidth: largNome, fontSize: 6 }, 1: { cellWidth: largB, fontStyle: "bold" } }, ...cols.map((c, k) => ({ [k + 2]: { cellWidth: largC } }))),
+    didParseCell: c => {
+      if (c.section === "head" && c.column.index >= 2 && cols[c.column.index - 2].b === "AC") { c.cell.styles.fillColor = "#2a59c3"; }
+      if (c.section !== "body") return;
+      const a = al[c.row.index];
+      let st = "";
+      if (c.column.index === 1) st = a.bloco.st;
+      else if (c.column.index >= 2) { const col = cols[c.column.index - 2]; if (col.b === "AC") { const x = a.ac.find(y => y.i === col.i); st = x ? x.st : ""; } }
+      if (st === "x") { c.cell.styles.textColor = P.badText; c.cell.styles.fillColor = P.badTint; c.cell.styles.fontStyle = "bold"; }
+      if (st === "a") { c.cell.styles.fillColor = P.warnTint; c.cell.styles.fontStyle = "bold"; }
+    },
+    willDrawPage: d => { if (d.pageNumber > 1) faixa(`Turma ${t.id} · faltas por componente (continuação)`); },
+  });
+
+  // Notas: nota necessária no 3º trimestre
+  const cn = cf;
+  doc.addPage(); faixa(`Turma ${t.id} · notas: nota necessária no 3º trimestre por componente`);
+  txt("Número: nota necessária no 3º trimestre = 17 - (1º + 2º); vermelho acima de 10, amarelo acima de 8. Entre colchetes: soma final, quando o 3º trimestre já foi lançado (vermelho abaixo de 17).", M, 18, { size: 7.5, color: P.muted });
+  const largN = (CW - largNome - 12) / cn.length;
+  doc.autoTable({
+    startY: 21, margin: { left: M, right: M, top: 18, bottom: 14 }, rowPageBreak: "avoid",
+    head: [["Estudante", "Em recup.", ...cn.map(c => c.s)]],
+    body: al.map(a => [`${a.nome}\n${a.id}`, a.nRec || "", ...cn.map(c => {
+      const s = a.notas[c.i];
+      return !s ? "-" : s.lanc ? `[${dec(s.soma)}]` : dec(s.nec);
+    })]),
+    styles: { fontSize: 6.5, cellPadding: 0.8, textColor: P.fg, lineColor: P.line, lineWidth: 0.1, halign: "center", valign: "middle" },
+    headStyles: { fillColor: P.brand, textColor: P.white, fontStyle: "bold", fontSize: 5.8 },
+    columnStyles: Object.assign({ 0: { halign: "left", cellWidth: largNome, fontSize: 6 }, 1: { cellWidth: 12, fontStyle: "bold", textColor: P.badText } }, ...cn.map((c, k) => ({ [k + 2]: { cellWidth: largN } }))),
+    didParseCell: c => {
+      if (c.section !== "body" || c.column.index < 2) return;
+      const s = al[c.row.index].notas[cn[c.column.index - 2].i];
+      if (s && s.rec) { c.cell.styles.textColor = P.badText; c.cell.styles.fillColor = P.badTint; c.cell.styles.fontStyle = "bold"; }
+      else if (s && s.aten) { c.cell.styles.fillColor = P.warnTint; c.cell.styles.fontStyle = "bold"; }
+    },
+    willDrawPage: d => { if (d.pageNumber > 1) faixa(`Turma ${t.id} · notas (continuação)`); },
+  });
+
+  const n = doc.getNumberOfPages();
+  for (let p = 1; p <= n; p++) {
+    doc.setPage(p);
+    txt(`${D.escola} · Frequência e rendimento · Turma ${t.id} · dados de ${t.data} · Os dados vêm do SIEPE; em caso de divergência, vale o SIEPE.`, M, H - 6, { size: 6.5, color: P.muted });
+    txt(`Página ${p} de ${n}`, W - M, H - 6, { size: 6.5, color: P.muted, align: "right" });
+    [2, 3, 2, 3].reduce((x, partes, k) => { caixa(x, H - 3, W * partes / 10, 3, P.flag[k]); return x + W * partes / 10; }, 0);
+  }
+  return doc;
+}
+const pc = c => c ? ` (${c})` : "";
+const graduadosRec = a => Object.entries(a.notas).filter(([, s]) => s && s.rec).map(([i]) => C[+i].s);
+const ordenarPdf = l => l.sort((a, b) => QORD[a.quad] - QORD[b.quad] || b.aComp - a.aComp || b.perto - a.perto || a.nome.localeCompare(b.nome, "pt-BR"));
+const nomeArq = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w.-]+/g, "_");
+
+function baixarArquivo(nome, blob) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+async function comBotao(btn, andamento, tarefa, fim) {
+  const rotulo = btn.textContent;
+  btn.textContent = andamento;
+  btnPdf.disabled = btnTodas.disabled = true;
+  try {
+    if (!window.jspdf || !window.JSZip) throw new Error("bibliotecas de PDF não carregaram (sem internet?)");
+    await new Promise(r => setTimeout(r));
+    await tarefa();
+    btn.textContent = fim;
+  } catch (err) {
+    btn.textContent = `Erro: ${err.message}`;
+  } finally {
+    btnPdf.disabled = fTur.value === "";
+    btnTodas.disabled = false;
+    setTimeout(() => { btn.textContent = rotulo; }, 4000);
+  }
+}
+btnPdf.addEventListener("click", () => {
+  const t = T[+fTur.value];
+  comBotao(btnPdf, "Gerando PDF…", async () => baixarArquivo(`${nomeArq(D.escola)}_Turma_${t.id}_frequencia.pdf`, pdfTurma(t).output("blob")), "PDF baixado");
+});
+btnTodas.addEventListener("click", () => {
+  comBotao(btnTodas, "Gerando PDFs…", async () => {
+    const zip = new JSZip();
+    for (let k = 0; k < turmasAtuais.length; k++) {
+      const t = turmasAtuais[k];
+      btnTodas.textContent = `Gerando ${k + 1}/${turmasAtuais.length}…`;
+      await new Promise(r => setTimeout(r));
+      zip.file(`${nomeArq(D.escola)}_Turma_${t.id}_frequencia.pdf`, pdfTurma(t).output("arraybuffer"));
+    }
+    btnTodas.textContent = "Compactando…";
+    baixarArquivo(`${nomeArq(D.escola)}_frequencia_turmas.zip`, await zip.generateAsync({ type: "blob" }));
+  }, ".zip baixado");
+});
+
+// ---------- Caixas de diálogo e registro de alterações (visível para todos) ----------
+function abrirDlg(html) { const d = $("dlg"); d.innerHTML = html; if (!d.open) d.showModal(); return d; }
+$("dlg").addEventListener("click", ev => { if (ev.target === ev.currentTarget || ev.target.closest("[data-fechar]")) ev.currentTarget.close(); });
+const cabDlg = (titulo, sub = "") => `<header><div><h2>${titulo}</h2>${sub ? `<p>${sub}</p>` : ""}</div><button type="button" data-fechar>Fechar</button></header>`;
+function abrirRegistro() {
+  const lista = [...(D.registro || [])].reverse();
+  abrirDlg(`${cabDlg("Registro de alterações", `Tudo o que mudou no painel, com data · versão ${num(ENV.versao || 1)} publicada em ${esc(dataHora(ENV.publicado))}`)}
+    <div class="corpo"><ol class="registro">${lista.map(r => `<li><time>${esc(dataHora(r.quando))}</time><span>${esc(r.texto)}</span></li>`).join("") || "<li>Nada registrado.</li>"}</ol>
+    <p class="note fonte">Os dados vêm do SIEPE. Em caso de divergência, vale o SIEPE.</p></div>`);
+}
+$("reg").addEventListener("click", abrirRegistro);
+
+// ---------- Alterações em andamento ----------
+let ADM = null, ALTERADO = 0;
+const agoraISO = () => new Date().toISOString();
+const registrar = texto => D.registro.push({ quando: agoraISO(), texto });
+function marcarAlterado() { ALTERADO++; mostrarAdmin(); }
+function recalcular() {
+  preparar();
+  atualizar();
+  if (fichaAtual && $("ficha").open) ficha(fichaAtual);
+  mostrarAdmin();
+}
+window.addEventListener("beforeunload", ev => { if (ALTERADO) { ev.preventDefault(); ev.returnValue = ""; } });
+
+// ---------- Cifra ----------
+const bytesB64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
+const b64utf8 = str => bytesB64(new TextEncoder().encode(str));
+async function chavePBKDF2(senha, sal, iter, usos) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(senha), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt: sal, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, usos);
+}
+async function cifrarBytes(bytes, senha, iter) {
+  const sal = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const k = await chavePBKDF2(senha, sal, iter, ["encrypt"]);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, bytes));
+  return { sal: bytesB64(sal), iv: bytesB64(iv), ct: bytesB64(ct), iteracoes: iter };
+}
+async function decifrarTexto(env, senha) {
+  const k = await chavePBKDF2(senha, b64(env.sal), env.iteracoes, ["decrypt"]);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(env.iv) }, k, b64(env.ct)));
+}
+async function cifrarDados(dados, senha) {
+  const gz = new Uint8Array(await new Response(new Blob([JSON.stringify(dados)]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+  return cifrarBytes(gz, senha, ENV.iteracoes || 600000);
+}
+
+// ---------- Chave do GitHub: só neste navegador, cifrada com o PIN ----------
+const CHAVE_LS = "painel-admin:" + location.pathname.replace(/[^/]*$/, "");
+const lsLer = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+const lsGravar = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+const GH = "https://api.github.com";
+async function gh(metodo, caminho, corpo, aceitar, token) {
+  let r;
+  try {
+    r = await fetch(GH + caminho, {
+      method: metodo, cache: "no-store",
+      headers: { Authorization: `Bearer ${token || ADM.token}`, Accept: aceitar || "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(corpo ? { "Content-Type": "application/json" } : {}) },
+      body: corpo ? JSON.stringify(corpo) : undefined,
+    });
+  } catch (e) { const x = new Error("sem conexão com o GitHub"); x.status = 0; throw x; }
+  if (!r.ok) {
+    const x = new Error(`o GitHub respondeu ${r.status}`); x.status = r.status;
+    try { x.detalhe = (await r.json()).message; } catch (e) {}
+    throw x;
+  }
+  return aceitar && aceitar.includes("raw") ? r.text() : r.json();
+}
+const repoCaminho = a => `/repos/${encodeURIComponent(a.owner)}/${encodeURIComponent(a.repo)}`;
+const arqCaminho = a => `${repoCaminho(a)}/contents/${a.path.split("/").map(encodeURIComponent).join("/")}`;
+function erroGH(e) {
+  if (e.status === 401) return "a chave é inválida ou expirou. Gere uma nova no GitHub.";
+  if (e.status === 403) return "a chave não tem permissão para isso (confira: só este repositório, com permissão de alterar arquivos).";
+  if (e.status === 404) return "repositório ou arquivo não encontrado, ou a chave não dá acesso a ele.";
+  if (e.status === 409 || e.status === 422) return "o arquivo mudou no GitHub enquanto você trabalhava. Recarregue a página e refaça as alterações.";
+  return e.message + (e.detalhe ? ` (${e.detalhe})` : "");
+}
+async function verificarAcesso(a) {
+  const rep = await gh("GET", repoCaminho(a), null, null, a.token);
+  if (!rep.permissions || !rep.permissions.push) { const x = new Error("esta chave não pode alterar o repositório"); x.status = 403; throw x; }
+  await gh("GET", arqCaminho(a), null, null, a.token);
+}
+function padraoRepo() {
+  const h = location.hostname, partes = location.pathname.split("/").filter(Boolean);
+  if (!h.endsWith(".github.io")) return { owner: "", repo: "", path: "index.html" };
+  const arquivo = partes.length && /\.html?$/i.test(partes[partes.length - 1]) ? partes.pop() : "index.html";
+  const repo = partes.length ? partes.shift() : h;
+  return { owner: h.split(".")[0], repo, path: [...partes, arquivo].join("/") };
+}
+
+function dlgConfig() {
+  const p = padraoRepo();
+  const d = abrirDlg(`${cabDlg("Configurar administração", "Só é preciso uma vez por computador.")}
+    <div class="corpo"><form class="form-adm" id="f-config" autocomplete="off">
+      <div class="linha3">
+        <div class="field"><label>Usuário ou organização no GitHub</label><input name="owner" required value="${esc(p.owner)}"></div>
+        <div class="field"><label>Repositório</label><input name="repo" required value="${esc(p.repo)}"></div>
+        <div class="field"><label>Arquivo do painel</label><input name="path" required value="${esc(p.path)}"></div>
+      </div>
+      <div class="field"><label>Chave de acesso do GitHub (token)</label><input name="token" type="password" required autocomplete="off" spellcheck="false"></div>
+      <label class="check"><input type="radio" name="modo" value="lembrar" checked> Lembrar neste computador, protegida por um PIN</label>
+      <label class="check"><input type="radio" name="modo" value="sessao"> Só desta vez (some ao fechar a página; bom para computador compartilhado)</label>
+      <div class="linha3 pins">
+        <div class="field"><label>PIN (pelo menos 6 dígitos)</label><input name="pin" type="password" inputmode="numeric" autocomplete="new-password"></div>
+        <div class="field"><label>Repita o PIN</label><input name="pin2" type="password" inputmode="numeric" autocomplete="new-password"></div>
+      </div>
+      <p class="erro" hidden></p>
+      <div class="botoes"><button type="submit" class="forte">Verificar e entrar</button></div>
+    </form>
+    <p class="note">A chave nunca vai para o arquivo publicado: fica só neste navegador, cifrada com o PIN, ou só na memória, se você escolher "só desta vez".</p></div>`);
+  const f = d.querySelector("#f-config"), erro = f.querySelector(".erro");
+  f.addEventListener("change", () => { f.querySelector(".pins").hidden = f.modo.value !== "lembrar"; });
+  f.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    erro.hidden = true;
+    const a = { owner: f.owner.value.trim(), repo: f.repo.value.trim(), path: f.path.value.trim().replace(/^\/+/, ""), token: f.token.value.trim() };
+    const lembrar = f.modo.value === "lembrar";
+    if (lembrar && !/^\d{6,}$/.test(f.pin.value)) { erro.textContent = "O PIN precisa ter pelo menos 6 dígitos."; erro.hidden = false; return; }
+    if (lembrar && f.pin.value !== f.pin2.value) { erro.textContent = "Os dois PINs não são iguais."; erro.hidden = false; return; }
+    const btn = f.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Verificando no GitHub…";
+    try {
+      await verificarAcesso(a);
+      if (lembrar) {
+        const env = await cifrarBytes(new TextEncoder().encode(JSON.stringify({ token: a.token })), f.pin.value, 300000);
+        if (!lsGravar(CHAVE_LS, { owner: a.owner, repo: a.repo, path: a.path, ...env })) throw new Error("este navegador não deixou guardar a chave; use \"só desta vez\"");
+      }
+      d.close();
+      ativarAdmin(a);
+    } catch (e) {
+      erro.textContent = "Não deu certo: " + erroGH(e);
+      erro.hidden = false;
+      btn.disabled = false; btn.textContent = "Verificar e entrar";
+    }
+  });
+}
+function dlgPin() {
+  const s = lsLer(CHAVE_LS);
+  const d = abrirDlg(`${cabDlg("Administração", esc(`github.com/${s.owner}/${s.repo}`))}
+    <div class="corpo"><form class="form-adm" id="f-pin" autocomplete="off">
+      <div class="field"><label>PIN</label><input name="pin" type="password" inputmode="numeric" autocomplete="off" required></div>
+      <p class="erro" hidden></p>
+      <div class="botoes"><button type="submit" class="forte">Entrar</button> <button type="button" data-reconfig>Usar outra chave</button></div>
+    </form></div>`);
+  const f = d.querySelector("#f-pin"), erro = f.querySelector(".erro");
+  f.pin.focus();
+  d.querySelector("[data-reconfig]").addEventListener("click", dlgConfig);
+  f.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    erro.hidden = true;
+    const btn = f.querySelector("button[type=submit]");
+    btn.disabled = true; btn.textContent = "Verificando…";
+    let token;
+    try { token = JSON.parse(await decifrarTexto(s, f.pin.value)).token; }
+    catch (e) { erro.textContent = "PIN incorreto."; erro.hidden = false; btn.disabled = false; btn.textContent = "Entrar"; f.pin.select(); return; }
+    const a = { owner: s.owner, repo: s.repo, path: s.path, token };
+    try { await verificarAcesso(a); d.close(); ativarAdmin(a); }
+    catch (e) { erro.textContent = "Não deu certo: " + erroGH(e); erro.hidden = false; btn.disabled = false; btn.textContent = "Entrar"; }
+  });
+}
+function ativarAdmin(a) {
+  ADM = a;
+  mostrarAdmin();
+  if (fichaAtual && $("ficha").open) ficha(fichaAtual);
+}
+function mostrarAdmin() {
+  $("admin-bar").hidden = !ADM;
+  $("adm").hidden = !!ADM || !(lsLer(CHAVE_LS) || location.hash === "#admin");
+  if (!ADM) return;
+  $("adm-repo").textContent = ` · github.com/${ADM.owner}/${ADM.repo}`;
+  $("adm-versao").textContent = ` · versão publicada nº ${num(ENV.versao || 1)} (${dataHora(ENV.publicado)})`;
+  const pe = $("adm-pend");
+  pe.hidden = !ALTERADO;
+  pe.textContent = ` · ${plural(ALTERADO, "alteração não publicada", "alterações não publicadas")}`;
+  $("adm-pendencias").textContent = `Pendências (${num(pendencias().length)})`;
+  $("adm-esquecer").hidden = !lsLer(CHAVE_LS);
+}
+$("adm").addEventListener("click", () => { if (!ADM) (lsLer(CHAVE_LS) ? dlgPin : dlgConfig)(); });
+window.addEventListener("hashchange", () => { if (D) mostrarAdmin(); });
+$("adm-esquecer").addEventListener("click", () => {
+  lsGravar(CHAVE_LS, null);
+  mostrarAdmin();
+  abrirDlg(`${cabDlg("Chave esquecida")}<div class="corpo"><p>A chave foi apagada deste computador. Você continua no modo administração até sair ou fechar a página.</p></div>`);
+});
+$("adm-sair").addEventListener("click", () => {
+  if (!ALTERADO) { ADM = null; mostrarAdmin(); if (fichaAtual && $("ficha").open) ficha(fichaAtual); return; }
+  const d = abrirDlg(`${cabDlg("Alterações não publicadas")}<div class="corpo"><p>Há ${plural(ALTERADO, "alteração não publicada", "alterações não publicadas")}. Se sair agora, elas se perdem.</p>
+    <div class="botoes"><button type="button" class="forte" data-fechar>Voltar e publicar</button> <button type="button" id="sair-mesmo" class="perigo">Sair e descartar</button></div></div>`);
+  d.querySelector("#sair-mesmo").addEventListener("click", () => { ALTERADO = 0; location.reload(); });
+});
+
+// ---------- Compensações (na ficha do estudante) ----------
+const novoId = () => "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const descComp = (a, e) => `${a.nome} (${a.id}) · ${e.comp} · ${e.tri}º trimestre · ${plural(e.qtd, "falta", "faltas")} · ${e.tag} (${TAGS[e.tag] || e.tag})`;
+function avisoForm(f, texto) { const p = f.querySelector(".aviso-form"); p.textContent = texto; p.hidden = false; }
+$("ficha").addEventListener("input", ev => { const f = ev.target.closest(".comp-form"); if (f) { f.dataset.confirmado = ""; f.querySelector(".aviso-form").hidden = true; } });
+$("ficha").addEventListener("submit", ev => {
+  const f = ev.target.closest(".comp-form");
+  if (!f || !ADM) return;
+  ev.preventDefault();
+  const a = A.find(x => x.id === fichaAtual), fd = new FormData(f);
+  const comp = fd.get("comp"), tri = +fd.get("tri"), qtd = Number(fd.get("qtd")), tag = fd.get("tag");
+  if (!Number.isInteger(qtd) || qtd < 1) return avisoForm(f, "Informe um número inteiro de faltas (1 ou mais).");
+  const i = CIDX[normal(comp)], faltasTri = (a.c[i] && a.c[i][tri - 1]) || 0;
+  const outras = a.comps.filter(e => normal(e.comp) === normal(comp) && e.tri === tri && e.id !== f.dataset.editando).reduce((s, e) => s + e.qtd, 0);
+  if (outras + qtd > faltasTri && f.dataset.confirmado !== "1") {
+    f.dataset.confirmado = "1";
+    return avisoForm(f, `O relatório tem ${plural(faltasTri, "falta", "faltas")} em ${comp} no ${tri}º trimestre, e as compensações somariam ${num(outras + qtd)}. Confira no SIEPE; se estiver certo, clique de novo para salvar assim mesmo (vai aparecer nas pendências).`);
+  }
+  if (f.dataset.editando) {
+    const e = D.compensacoes.find(x => x.id === f.dataset.editando);
+    const antes = descComp(a, e);
+    Object.assign(e, { comp, tri, qtd, tag, editado: agoraISO() });
+    registrar(`Compensação alterada: ${antes} → ${e.comp} · ${e.tri}º trimestre · ${plural(e.qtd, "falta", "faltas")} · ${e.tag} (${TAGS[e.tag]})`);
+  } else {
+    const e = { id: novoId(), k: a.k, aluno: a.id, nome: a.nome, comp, tri, qtd, tag, quando: agoraISO() };
+    D.compensacoes.push(e);
+    registrar(`Compensação adicionada: ${descComp(a, e)}`);
+  }
+  ALTERADO++;
+  recalcular();
+});
+$("ficha").addEventListener("click", ev => {
+  if (!ADM) return;
+  const ed = ev.target.closest("[data-ed]"), rm = ev.target.closest("[data-rm]"), canc = ev.target.closest("[data-cancelar]");
+  if (ed) ficha(fichaAtual, ed.dataset.ed);
+  else if (canc) ficha(fichaAtual);
+  else if (rm) {
+    if (rm.dataset.ok !== "1") { rm.dataset.ok = "1"; rm.textContent = "Confirmar remoção"; rm.classList.add("perigo"); return; }
+    const e = D.compensacoes.find(x => x.id === rm.dataset.rm), a = A.find(x => x.id === fichaAtual);
+    D.compensacoes = D.compensacoes.filter(x => x !== e);
+    registrar(`Compensação removida: ${descComp(a, e)}`);
+    ALTERADO++;
+    recalcular();
+  }
+});
+
+// ---------- Pendências ----------
+function pendencias() {
+  const p = [], porK = Object.fromEntries(A.map(a => [a.k, a])), grupos = {};
+  for (const e of D.compensacoes) {
+    const a = porK[e.k];
+    if (!a) { p.push(`Compensação de ${e.nome} (${e.aluno}) em ${e.comp}: o estudante não está nos relatórios atuais (mudou de turma, saiu ou teve o nome corrigido no SIEPE).`); continue; }
+    const i = CIDX[normal(e.comp)];
+    if (i === undefined || !(i in a.c)) { p.push(`Compensação de ${a.nome} (${a.id}): o componente "${e.comp}" não existe na turma ${a.turma.id}.`); continue; }
+    const g = `${e.k}|${i}|${e.tri}`;
+    (grupos[g] = grupos[g] || { a, i, tri: e.tri, q: 0 }).q += e.qtd;
+  }
+  for (const g of Object.values(grupos)) {
+    const f = g.a.c[g.i][g.tri - 1] || 0;
+    if (g.q > f) p.push(`${g.a.nome} (${g.a.id}) · ${C[g.i].n} · ${g.tri}º trimestre: ${plural(g.q, "falta compensada", "faltas compensadas")}, mas o relatório tem ${plural(f, "falta", "faltas")}.`);
+  }
+  for (const x of D.avisos || []) p.push(x);
+  const sem = A.filter(a => a.obs.length);
+  if (sem.length) p.push(`${plural(sem.length, "estudante tem", "estudantes têm")} faltas de algum trimestre não lançadas no sistema: ${sem.map(a => a.id).join(", ")}.`);
+  return p;
+}
+$("adm-pendencias").addEventListener("click", () => {
+  const p = pendencias();
+  abrirDlg(`${cabDlg("Pendências", "Coisas para conferir no SIEPE")}<div class="corpo">${p.length ? `<ul class="pend">${p.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "<p>Nenhuma pendência.</p>"}</div>`);
+});
+
+// ---------- Leitura dos relatórios "Rendimento Escolar" no navegador ----------
+const MATRIZ = {
+  FGB: [["Artes", "Artes", 40], ["Língua Portuguesa e suas Literaturas", "Português", 160], ["Língua Inglesa", "Inglês", 80], ["Educação Física", "Ed. Física", 40],
+    ["Matemática", "Matemática", 160], ["Biologia", "Biologia", 80], ["Química", "Química", 80], ["Física", "Física", 80], ["História", "História", 80],
+    ["Geografia", "Geografia", 80], ["Filosofia", "Filosofia", 40], ["Sociologia", "Sociologia", 40]],
+  AC: [["Letramento Linguístico", "Letramento", 80], ["Matemática Básica", "Mat. Básica", 80], ["Cultura Digital e Midiática", "Cult. Digital", 80],
+    ["Investigação e Modelagem", "Investigação", 80], ["Estudo Orientado", "Est. Orientado", 80], ["Corpo, Arte e Movimento", "Corpo e Arte", 80],
+    ["Leitura e Produção Textual", "Leitura e Prod.", 40], ["Projeto, Trabalho e Sociedade (PTS)", "PTS", 80]],
+  TRILHAS: {
+    MAT: ["Matemática e Ciências da Natureza", "Anexo IX", [["Matemática e suas Tecnologias", "Mat. e Tec."], ["Ciências da Natureza e suas Tecnologias", "CN e Tec."],
+      ["Matemática e suas Tecnologias e Ciências Humanas e Sociais Aplicadas", "Mat. + CHS"]]],
+    LIN: ["Linguagens e Ciências Humanas", "Anexo VIII", [["Linguagens e suas Tecnologias", "Ling. e Tec."], ["Ciências Humanas e Sociais Aplicadas", "CHS"],
+      ["Linguagens e suas Tecnologias e Ciências da Natureza e suas Tecnologias", "Ling. + CN"]]],
+  },
+};
+function ifa(trilha, serie) {
+  const [a, b, c] = MATRIZ.TRILHAS[trilha][2];
+  const comp = [[a[0], a[1], 80], [b[0], b[1], 80], [c[0], c[1], { 1: 80, 2: 40, 3: 80 }[serie]]];
+  if (serie === 2) comp.push(["História de Pernambuco", "Hist. PE", 40]);
+  return comp;
+}
+const XLSX_URL = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+function carregarScript(url) {
+  return new Promise((ok, falha) => {
+    if (window.XLSX) return ok();
+    const s = document.createElement("script");
+    s.src = url; s.onload = ok;
+    s.onerror = () => falha(new Error("não foi possível carregar o leitor de planilhas (sem internet?)"));
+    document.head.append(s);
+  });
+}
+const numero = v => { v = String(v ?? "").trim(); return v === "" || v === "-" ? null : parseFloat(v.replace(",", ".")); };
+function lerRelatorio(nome, buf) {
+  const livro = XLSX.read(buf, { type: "array" });
+  const abas = [];
+  for (const sn of livro.SheetNames) {
+    const linhas = XLSX.utils.sheet_to_json(livro.Sheets[sn], { header: 1, raw: true, defval: "" });
+    const hr = linhas.findIndex(r => String(r[0] ?? "").trim() === "Chamada");
+    if (hr < 0) throw new Error(`${nome}: a aba "${sn}" não tem a linha "Chamada"; não parece um relatório Rendimento Escolar.`);
+    const info = linhas.slice(0, hr).flat().filter(v => String(v).trim()).join(" ");
+    const cab = linhas[hr], sub = linhas[hr + 1] || [];
+    const larg = Math.max(cab.length, sub.length);
+    const cols = [];
+    for (let j = 0; j < larg; j++) if (String(sub[j] ?? "").trim() === "Nota") cols.push([String(cab[j] ?? "").trim(), j]);
+    const jF = cab.findIndex(v => String(v ?? "").trim() === "Faltas");
+    const alunos = [];
+    for (let r = hr + 2; r < linhas.length; r++) {
+      const lin = linhas[r];
+      if (typeof lin[0] !== "number" || !String(lin[1] ?? "").trim()) continue;
+      const al = { ch: Math.trunc(lin[0]), nome: String(lin[1]).trim().split(/\s+/).join(" "), nota: {}, falta: {}, Faltas: jF >= 0 ? numero(lin[jF]) : null };
+      for (const [d, j] of cols) {
+        al.nota[d] = numero(lin[j]);
+        const f = numero(lin[j + 1]);
+        al.falta[d] = f === null ? null : Math.trunc(f);
+      }
+      alunos.push(al);
+    }
+    const tri = /(\d)º Trimestre/.exec(info);
+    abas.push({ trimestre: tri ? +tri[1] : abas.length + 1, info, discs: cols.map(c => c[0]), alunos });
+  }
+  const m = /Série: (\d)º Ano.*?Turma: (\S+).*?Data: (\S+)/.exec(abas[0] ? abas[0].info : "");
+  if (!m) throw new Error(`${nome}: cabeçalho não reconhecido (série, turma ou data).`);
+  return { arquivo: nome, serie: +m[1], turma: m[2], data: m[3], itinerario: m[2].includes("ITFT") || abas[0].info.includes("Itinerário"), abas };
+}
+const dataNum = d => d.split("/").reverse().join("");
+function compIdx(nome, curto, bloco) {
+  const k = normal(nome);
+  if (!(k in CIDX)) { D.comps.push({ n: nome, s: curto, b: bloco }); CIDX[k] = D.comps.length - 1; }
+  return CIDX[k];
+}
+function montarTurmas(rels) {
+  const erros = [], avisos = [];
+  for (const r of rels) for (const a of r.abas) for (const al of a.alunos) {
+    const s = Object.values(al.falta).reduce((x, v) => x + (v || 0), 0);
+    if (al.Faltas !== null && s !== al.Faltas) avisos.push(`${r.arquivo} ${a.trimestre}º trim., ${al.nome}: soma ${s} ≠ Faltas ${al.Faltas}`);
+  }
+  const fgb = {}, itn = {};
+  for (const r of rels) {
+    const k = r.turma.slice(-2), alvo = r.itinerario ? itn : fgb;
+    if (alvo[k]) erros.push(`Turma ${k}: dois relatórios de ${r.itinerario ? "itinerário" : "FGB"} (${alvo[k].arquivo} e ${r.arquivo}).`);
+    alvo[k] = r;
+  }
+  for (const k of new Set([...Object.keys(fgb), ...Object.keys(itn)])) {
+    if (!fgb[k]) erros.push(`Turma ${k}: falta o relatório de FGB (só veio o de itinerário).`);
+    if (!itn[k]) erros.push(`Turma ${k}: falta o relatório de itinerário (só veio o de FGB).`);
+  }
+  for (const [n, s] of MATRIZ.FGB) compIdx(n, s, "FGB");
+  for (const t of ["MAT", "LIN"]) for (const serie of [1, 2, 3]) for (const [n, s] of ifa(t, serie)) compIdx(n, s, "IFA");
+  for (const [n, s] of MATRIZ.AC) compIdx(n, s, "AC");
+  const turmas = [], alunos = [];
+  for (const k of Object.keys(fgb).filter(k => itn[k]).sort()) {
+    const rf = fgb[k], ri = itn[k], serie = rf.serie;
+    const discsIt = new Set(ri.abas[0].discs.map(normal));
+    const trilha = [...discsIt].some(d => d.includes("LINGUAGENS")) ? "LIN" : "MAT";
+    const lista = [...MATRIZ.FGB, ...ifa(trilha, serie), ...MATRIZ.AC];
+    const cargas = Object.fromEntries(lista.map(([n, , c]) => [CIDX[normal(n)], c]));
+    const esperado = new Set(lista.map(([n]) => normal(n)));
+    const presentes = new Set([...rf.abas[0].discs.map(normal), ...discsIt]);
+    const sobram = [...presentes].filter(x => !esperado.has(x)), faltam = [...esperado].filter(x => !presentes.has(x));
+    if (sobram.length || faltam.length) { erros.push(`Turma ${k}: componentes não batem com a matriz.${sobram.length ? ` Sobram: ${sobram.join(", ")}.` : ""}${faltam.length ? ` Faltam: ${faltam.join(", ")}.` : ""}`); continue; }
+    const ti = turmas.length;
+    turmas.push({ id: k, serie, trilha: MATRIZ.TRILHAS[trilha][0], anexo: MATRIZ.TRILHAS[trilha][1], fgb: rf.turma, it: ri.turma, data: rf.data, cargas });
+    const reg = new Map();
+    for (const rel of [rf, ri]) for (const aba of rel.abas) {
+      const t = aba.trimestre - 1;
+      for (const al of aba.alunos) {
+        const nk = normal(al.nome);
+        if (!reg.has(nk)) reg.set(nk, { nome: al.nome, ch: null, c: {}, sem: new Set(), em: new Set() });
+        const e = reg.get(nk);
+        if (rel === rf && e.ch === null) e.ch = al.ch;
+        e.em.add(rel.turma);
+        for (const [d, f] of Object.entries(al.falta)) {
+          const i = CIDX[normal(d)];
+          const x = e.c[i] || (e.c[i] = [null, null, null, null, null, null]);
+          x[t] = f;
+          x[3 + t] = al.nota[d];
+          if (f === null && al.nota[d] !== null) e.sem.add(aba.trimestre);
+        }
+      }
+    }
+    for (const e of reg.values()) if (e.em.size < 2) avisos.push(`Turma ${k}: ${e.nome} aparece só em ${[...e.em].join(", ")}`);
+    const ordem = [...reg.values()].sort((x, y) => (x.ch === null) - (y.ch === null) || (x.ch || 0) - (y.ch || 0) || (x.nome < y.nome ? -1 : x.nome > y.nome ? 1 : 0));
+    for (const e of ordem) alunos.push({
+      id: `${k}-${String(e.ch || 0).padStart(2, "0")}`, k: `${k}|${normal(e.nome)}`, nome: e.nome, t: ti, c: e.c,
+      obs: [...e.sem].sort().map(t => `Faltas do ${t}º trimestre não lançadas no sistema (contadas como 0).`),
+    });
+  }
+  return { turmas, alunos, erros, avisos };
+}
+
+let PREVIA = null;
+function dlgCarregar() {
+  PREVIA = null;
+  const d = abrirDlg(`${cabDlg("Carregar relatórios", "Rendimento Escolar (.xls) exportados do SIEPE")}
+    <div class="corpo">
+      <p class="note">Mande, para cada turma, os dois relatórios: FGB e itinerário. Turmas que não vierem continuam como estão. As compensações não mudam.</p>
+      <label class="drop" id="drop"><input type="file" id="arqs" multiple accept=".xls,.xlsx"><span>Arraste os arquivos aqui ou clique para escolher</span></label>
+      <div id="previa"></div>
+    </div>`);
+  const drop = d.querySelector("#drop"), inp = d.querySelector("#arqs");
+  drop.addEventListener("dragover", ev => { ev.preventDefault(); drop.classList.add("sobre"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("sobre"));
+  drop.addEventListener("drop", ev => { ev.preventDefault(); drop.classList.remove("sobre"); processarArquivos([...ev.dataTransfer.files]); });
+  inp.addEventListener("change", () => processarArquivos([...inp.files]));
+}
+async function processarArquivos(arquivos) {
+  const box = $("previa");
+  if (!arquivos.length) return;
+  box.innerHTML = `<p class="note">Lendo ${plural(arquivos.length, "arquivo", "arquivos")}…</p>`;
+  try {
+    await carregarScript(XLSX_URL);
+    const rels = [];
+    for (const f of arquivos) rels.push(lerRelatorio(f.name, await f.arrayBuffer()));
+    const novo = montarTurmas(rels);
+    PREVIA = novo;
+    const linhas = novo.turmas.map((t, ti) => {
+      const antiga = D.turmas.find(x => x.id === t.id);
+      const antes = new Set(antiga ? D.alunos.filter(a => D.turmas[a.t] === antiga).map(a => a.k) : []);
+      const agora = new Set(novo.alunos.filter(a => a.t === ti).map(a => a.k));
+      const novos = [...agora].filter(k => !antes.has(k)).length, sairam = [...antes].filter(k => !agora.has(k)).length;
+      t._diff = { novos, sairam };
+      return `<tr><td><b>${esc(t.id)}</b></td><td>${esc(antiga ? antiga.data : "–")}</td><td><b>${esc(t.data)}</b></td><td class="num">${num(agora.size)}</td><td class="num">${antiga ? num(novos) : "turma nova"}</td><td class="num">${antiga ? num(sairam) : ""}</td></tr>`;
+    }).join("");
+    const kNovos = new Set(novo.alunos.map(a => a.k)), idsNovos = new Set(novo.turmas.map(t => t.id));
+    const orfas = D.compensacoes.filter(e => idsNovos.has(e.k.split("|")[0]) && !kNovos.has(e.k)).length;
+    box.innerHTML = `${novo.erros.length ? `<div class="obs"><b>Não dá para aplicar:</b><ul>${novo.erros.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+      ${novo.turmas.length ? `<div class="scroll"><table class="rank"><thead><tr><th>Turma</th><th>Dados atuais</th><th>Dados novos</th><th class="num">Estudantes</th><th class="num">Novos</th><th class="num">Saíram</th></tr></thead><tbody>${linhas}</tbody></table></div>` : ""}
+      ${novo.avisos.length ? `<details><summary>${plural(novo.avisos.length, "aviso", "avisos")} da leitura</summary><ul class="pend">${novo.avisos.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
+      ${orfas ? `<p class="obs">${plural(orfas, "compensação vai ficar", "compensações vão ficar")} sem estudante (aparecem nas pendências para você conferir).</p>` : ""}
+      <div class="botoes">${novo.erros.length || !novo.turmas.length ? "" : `<button type="button" class="forte" id="aplicar">Aplicar</button> `}<button type="button" data-fechar>Cancelar</button></div>`;
+    const ap = $("aplicar");
+    if (ap) ap.addEventListener("click", aplicarRelatorios);
+  } catch (e) {
+    box.innerHTML = `<p class="erro">Não foi possível ler: ${esc(e.message)}</p>`;
+  }
+}
+function aplicarRelatorios() {
+  const novo = PREVIA;
+  if (!novo) return;
+  const ids = new Set(novo.turmas.map(t => t.id));
+  const todas = [...D.turmas.filter(t => !ids.has(t.id)), ...novo.turmas].sort((x, y) => x.id < y.id ? -1 : 1);
+  const pos = new Map(todas.map((t, i) => [t, i]));
+  const alunos = [];
+  D.alunos.forEach(a => { const t = D.turmas[a.t]; if (!ids.has(t.id)) alunos.push({ ...a, t: pos.get(t) }); });
+  novo.alunos.forEach(a => alunos.push({ ...a, t: pos.get(novo.turmas[a.t]) }));
+  alunos.sort((x, y) => x.t - y.t);
+  const novos = novo.turmas.reduce((s, t) => s + t._diff.novos, 0), sairam = novo.turmas.reduce((s, t) => s + t._diff.sairam, 0);
+  todas.forEach(t => delete t._diff);
+  const datas = [...new Set(novo.turmas.map(t => t.data))].sort((a, b) => dataNum(a) < dataNum(b) ? -1 : 1);
+  D.turmas = todas;
+  D.alunos = alunos;
+  D.avisos = [...(D.avisos || []).filter(x => !ids.has((/^Turma (\S+):/.exec(x) || [])[1])), ...novo.avisos];
+  D.atualizado = todas.map(t => t.data).sort((a, b) => dataNum(a) < dataNum(b) ? -1 : 1).pop();
+  registrar(`Relatórios carregados: ${plural(ids.size, "turma", "turmas")} (${[...ids].join(", ")}), dados de ${datas.join(" e ")}. ${plural(novos, "estudante novo", "estudantes novos")}, ${plural(sairam, "saiu", "saíram")}.`);
+  PREVIA = null;
+  ALTERADO++;
+  preparar();
+  montarFiltros();
+  $("subtitulo").textContent = `${D.etapa} ${D.ano} · faltas do 1º ao 3º trimestre · dados de ${D.atualizado}`;
+  recalcular();
+  abrirDlg(`${cabDlg("Relatórios aplicados")}<div class="corpo"><p>Pronto. Confira o painel e clique em <b>Publicar</b> quando quiser que todos vejam.</p></div>`);
+}
+$("adm-carregar").addEventListener("click", dlgCarregar);
+
+// ---------- Publicar (GitHub) e baixar arquivo ----------
+const RE_DADOS = /<script id="dados" type="application\/json">([\s\S]*?)<\/script>/;
+async function fonteRemota() {
+  const meta = await gh("GET", arqCaminho(ADM));
+  const texto = await gh("GET", arqCaminho(ADM), null, "application/vnd.github.raw+json");
+  return { sha: meta.sha, texto };
+}
+async function novaVersao(fonte) {
+  if (!RE_DADOS.test(fonte)) throw new Error("o arquivo de origem não tem o bloco de dados do painel");
+  const publicado = agoraISO(), versao = (ENV.versao || 1) + 1;
+  const nova = { ...D, versao, publicado, registro: [...D.registro, { quando: publicado, texto: `Versão ${versao} publicada.` }] };
+  const env = { escola: nova.escola, etapa: nova.etapa, ano: nova.ano, atualizado: nova.atualizado, versao, publicado, ...(await cifrarDados(nova, SENHA)) };
+  const html = fonte.replace(RE_DADOS, () => `<script id="dados" type="application/json">${JSON.stringify(env).replace(/</g, "\\u003c")}<\/script>`);
+  return { nova, env, html };
+}
+function concluirVersao(nova, env) {
+  D = nova; ENV = env; ALTERADO = 0;
+  mostrarAdmin();
+}
+async function emAndamento(btn, texto, tarefa) {
+  const rot = btn.textContent;
+  document.querySelectorAll(".adm-acoes button").forEach(b => b.disabled = true);
+  btn.textContent = texto;
+  try { await tarefa(); }
+  finally { document.querySelectorAll(".adm-acoes button").forEach(b => b.disabled = false); btn.textContent = rot; mostrarAdmin(); }
+}
+$("adm-publicar").addEventListener("click", ev => emAndamento(ev.currentTarget, "Publicando…", async () => {
+  try {
+    const { sha, texto } = await fonteRemota();
+    const m = RE_DADOS.exec(texto);
+    let remoto = null;
+    try { remoto = m && JSON.parse(m[1]); } catch (e) {}
+    if (!remoto || (remoto.versao || 1) !== (ENV.versao || 1)) {
+      throw new Error(`a versão publicada no GitHub (nº ${remoto ? remoto.versao || 1 : "?"}) não é a que você abriu (nº ${ENV.versao || 1}). Recarregue a página (Ctrl + F5) e refaça as alterações; assim nada de mais novo é apagado.`);
+    }
+    const { nova, env, html } = await novaVersao(texto);
+    await gh("PUT", arqCaminho(ADM), { message: `Painel: versão ${nova.versao}`, content: b64utf8(html), sha });
+    concluirVersao(nova, env);
+    abrirDlg(`${cabDlg("Publicado")}<div class="corpo"><p>A versão <b>nº ${num(nova.versao)}</b> foi enviada ao GitHub. O endereço do painel mostra a nova versão em cerca de 1 minuto.</p></div>`);
+  } catch (e) {
+    abrirDlg(`${cabDlg("Não foi publicado")}<div class="corpo"><p class="erro">${esc(e.status !== undefined ? erroGH(e) : e.message)}</p><p class="note">Suas alterações continuam aqui. Se preferir, use "Baixar arquivo" e suba o index.html pelo site do GitHub.</p></div>`);
+  }
+}));
+$("adm-baixar").addEventListener("click", ev => emAndamento(ev.currentTarget, "Preparando…", async () => {
+  try {
+    let fonte = null;
+    try { const r = await fetch(location.href.split("#")[0], { cache: "no-store" }); if (r.ok) fonte = await r.text(); } catch (e) {}
+    if (!fonte || !RE_DADOS.test(fonte)) fonte = (await fonteRemota()).texto;
+    const { nova, env, html } = await novaVersao(fonte);
+    baixarArquivo("index.html", new Blob([html], { type: "text/html;charset=utf-8" }));
+    concluirVersao(nova, env);
+    abrirDlg(`${cabDlg("Arquivo baixado")}<div class="corpo"><p>Versão <b>nº ${num(nova.versao)}</b> baixada como <b>index.html</b>. Suba esse arquivo no repositório, no lugar do atual, para todos verem.</p></div>`);
+  } catch (e) {
+    abrirDlg(`${cabDlg("Não foi possível gerar o arquivo")}<div class="corpo"><p class="erro">${esc(e.status !== undefined ? erroGH(e) : e.message)}</p></div>`);
+  }
+}));
+
+// ---------- Login ----------
+$("l-sub").textContent = `${ENV.escola} · ${ENV.etapa} · ${ENV.ano}`;
+$("l-atualizado").textContent = `Dados de: ${ENV.atualizado}${ENV.versao ? ` · versão ${ENV.versao}` : ""}`;
+const lSenha = $("l-senha"), lErro = $("l-erro"), lEntrar = $("l-entrar");
+$("login-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  lErro.hidden = true;
+  lEntrar.disabled = true;
+  lEntrar.textContent = "Verificando…";
+  try {
+    D = await abrir(lSenha.value.trim());
+  } catch (err) {
+    lErro.textContent = err.name === "OperationError" ? "Senha incorreta, tente novamente" : `Não foi possível abrir o painel: ${err.message}`;
+    lErro.hidden = false;
+    lEntrar.disabled = false;
+    lEntrar.textContent = "Entrar";
+    lSenha.select();
+    return;
+  }
+  SENHA = lSenha.value.trim();
+  lSenha.value = "";
+  D.compensacoes = D.compensacoes || [];
+  D.registro = D.registro || [];
+  D.avisos = D.avisos || [];
+  preparar();
+  montarFiltros();
+  $("titulo").textContent = `${D.escola}: frequência e rendimento`;
+  $("subtitulo").textContent = `${D.etapa} ${D.ano} · faltas do 1º ao 3º trimestre · dados de ${D.atualizado}`;
+  $("login").hidden = true;
+  $("app").hidden = false;
+  atualizar();
+  mostrarAdmin();
+});
+$("sair").addEventListener("click", () => location.reload());
+</script>
+</html>
